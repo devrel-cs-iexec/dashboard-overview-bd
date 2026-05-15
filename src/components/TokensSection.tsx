@@ -1,4 +1,4 @@
-import { formatTokenAmount, shortAddress } from "@/lib/format";
+import { formatTokenAmount, formatUsd, shortAddress } from "@/lib/format";
 import type { TokenStats } from "@/lib/data";
 import { Reveal } from "./Reveal";
 
@@ -25,7 +25,9 @@ export function TokensSection({ tokens }: { tokens: TokenStats[] }) {
 }
 
 function TokenCard({ token }: { token: TokenStats }) {
-  const supplyFormatted = formatTokenAmount(token.inferredTotalSupply, token.decimals, 2);
+  const tvlNative = formatTokenAmount(token.tvl, token.decimals, 2);
+  const tvsNative = formatTokenAmount(token.tvs, token.decimals, 2);
+  const unwrapsNative = formatTokenAmount(token.cumulativeUnwraps, token.decimals, 2);
   return (
     <article
       className="surface surface-hover relative overflow-hidden rounded-2xl p-7"
@@ -57,27 +59,66 @@ function TokenCard({ token }: { token: TokenStats }) {
         </a>
       </header>
 
-      <div className="mt-8 flex items-end justify-between gap-6">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-            Total Value Secured
-          </div>
-          <div
-            className="display-num font-display mt-2 text-4xl font-medium leading-none sm:text-5xl"
-            style={{ color: token.accent }}
-          >
-            {supplyFormatted}
-          </div>
-          <div className="mt-2 font-mono text-[12px] text-[var(--color-muted)]">
-            {token.underlyingSymbol} locked · {token.decimals} decimals
-          </div>
+      <div className="mt-8 grid grid-cols-2 gap-4 border-y border-[var(--color-border)] py-6">
+        <Metric
+          label="TVL"
+          usd={formatUsd(token.tvlUsd)}
+          native={`${tvlNative} ${token.underlyingSymbol}`}
+          color={token.accent}
+        />
+        <Metric
+          label="TVS"
+          usd={formatUsd(token.tvsUsd)}
+          native={`${tvsNative} ${token.underlyingSymbol}`}
+        />
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-[12px]">
+        <div className="flex items-center gap-3 font-mono text-[var(--color-muted)]">
+          <span>
+            <span className="text-[var(--color-muted-2)]">Unwrapped:</span> {unwrapsNative}{" "}
+            {token.underlyingSymbol}
+          </span>
+          <span className="text-[var(--color-muted-2)]">·</span>
+          <span>
+            <span className="text-[var(--color-muted-2)]">Events:</span> {token.unwrapCount}
+          </span>
+          {!token.unwrapsScanned ? (
+            <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-300/90">
+              scan unavailable
+            </span>
+          ) : null}
         </div>
-        <div className="flex flex-col items-end gap-3 text-right">
-          <KvRow label="Wrapper" value={shortAddress(token.wrapper)} />
-          <KvRow label="Underlying" value={shortAddress(token.underlyingResolved)} />
-        </div>
+        <KvRow label="Underlying" value={shortAddress(token.underlyingResolved)} />
       </div>
     </article>
+  );
+}
+
+function Metric({
+  label,
+  usd,
+  native,
+  color,
+}: {
+  label: string;
+  usd: string;
+  native: string;
+  color?: string;
+}) {
+  return (
+    <div>
+      <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
+        {label}
+      </div>
+      <div
+        className="display-num font-display mt-2 text-3xl font-medium leading-none sm:text-4xl"
+        style={color ? { color } : undefined}
+      >
+        {usd}
+      </div>
+      <div className="mt-2 font-mono text-[12px] text-[var(--color-muted)]">{native}</div>
+    </div>
   );
 }
 
