@@ -38,6 +38,25 @@ export function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
+export function formatUsd(value: number, opts?: { compact?: boolean }): string {
+  if (!isFinite(value)) return "—";
+  if (opts?.compact === false) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
+  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
+  if (abs >= 10_000) return `$${(value / 1_000).toFixed(1)}K`;
+  if (abs >= 1_000) return `$${(value / 1_000).toFixed(2)}K`;
+  if (abs >= 1) return `$${value.toFixed(2)}`;
+  if (abs > 0) return `$${value.toFixed(4)}`;
+  return "$0";
+}
+
 const RTF = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 export function relativeTime(timestamp: number | bigint): string {
   const ts = typeof timestamp === "bigint" ? Number(timestamp) : timestamp;
