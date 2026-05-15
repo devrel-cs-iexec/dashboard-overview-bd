@@ -1,11 +1,18 @@
-import { formatCompactNumber, formatTokenCompact, relativeTime } from "@/lib/format";
+import {
+  formatCompactNumber,
+  formatTokenCompact,
+  formatUsd,
+} from "@/lib/format";
 import type { DashboardData } from "@/lib/data";
 import { Reveal } from "./Reveal";
 
 export function Hero({ data }: { data: DashboardData }) {
-  const tvsCompact = data.tokens
-    .map((t) => `${formatTokenCompact(t.inferredTotalSupply, t.decimals)} ${t.underlyingSymbol}`)
-    .join("  ·  ");
+  const breakdown = data.tokens
+    .map((t) => `${formatTokenCompact(t.tvl, t.decimals)} ${t.underlyingSymbol}`)
+    .join(" · ");
+  const tvsBreakdown = data.tokens
+    .map((t) => `${formatTokenCompact(t.tvs, t.decimals)} ${t.underlyingSymbol}`)
+    .join(" · ");
 
   return (
     <section className="relative isolate overflow-hidden pt-10 pb-20 lg:pt-16 lg:pb-28">
@@ -17,6 +24,11 @@ export function Hero({ data }: { data: DashboardData }) {
             <span className="font-mono uppercase tracking-[0.18em]">
               Live · subgraph block #{data.meta.block.toLocaleString()}
             </span>
+            {data.prices.live ? (
+              <span className="ml-2 font-mono text-[11px] text-[var(--color-muted-2)]">
+                RLC ${data.prices.rlc.toFixed(4)}
+              </span>
+            ) : null}
           </div>
         </Reveal>
 
@@ -40,14 +52,21 @@ export function Hero({ data }: { data: DashboardData }) {
         <div className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-border)] lg:grid-cols-4">
           <Reveal delay={0.15} as="div">
             <HeroStat
-              label="Total Value Secured"
-              value={tvsCompact}
-              subValue={`${data.tokens.length} confidential tokens`}
+              label="Total Value Locked"
+              value={formatUsd(data.totals.tvlUsd)}
+              subValue={breakdown}
               accent="#FFD21F"
-              big
             />
           </Reveal>
           <Reveal delay={0.2} as="div">
+            <HeroStat
+              label="Total Value Secured"
+              value={formatUsd(data.totals.tvsUsd)}
+              subValue={tvsBreakdown}
+              accent="#34D399"
+            />
+          </Reveal>
+          <Reveal delay={0.25} as="div">
             <HeroStat
               label="Encrypted operations"
               value={formatCompactNumber(data.totals.handles, 1)}
@@ -55,7 +74,7 @@ export function Hero({ data }: { data: DashboardData }) {
               accent="#A78BFA"
             />
           </Reveal>
-          <Reveal delay={0.25} as="div">
+          <Reveal delay={0.3} as="div">
             <HeroStat
               label="Active wallets"
               value={formatCompactNumber(
@@ -66,15 +85,15 @@ export function Hero({ data }: { data: DashboardData }) {
               accent="#2775CA"
             />
           </Reveal>
-          <Reveal delay={0.3} as="div">
-            <HeroStat
-              label="Subgraph freshness"
-              value={data.meta.lagSeconds < 60 ? "Live" : relativeTime(data.meta.timestamp)}
-              subValue={`block ${data.meta.block.toLocaleString()}`}
-              accent="#34D399"
-            />
-          </Reveal>
         </div>
+
+        <Reveal delay={0.35}>
+          <p className="mt-4 text-[12px] text-[var(--color-muted-2)]">
+            TVL = current value locked in confidential wrappers · TVS = cumulative inflows since
+            launch · USD figures use {data.prices.live ? "live CoinGecko" : "fallback"} prices
+            (RLC ${data.prices.rlc.toFixed(4)})
+          </p>
+        </Reveal>
       </div>
     </section>
   );
@@ -85,13 +104,11 @@ function HeroStat({
   value,
   subValue,
   accent,
-  big,
 }: {
   label: string;
   value: string;
   subValue?: string;
   accent: string;
-  big?: boolean;
 }) {
   return (
     <div className="surface relative flex h-full flex-col justify-between gap-4 p-6 lg:p-7">
@@ -99,9 +116,7 @@ function HeroStat({
         <span className="inline-block size-1.5 rounded-full" style={{ background: accent }} />
         {label}
       </div>
-      <div
-        className={`display-num font-display ${big ? "text-3xl sm:text-[34px] lg:text-[40px]" : "text-3xl sm:text-4xl lg:text-5xl"} font-medium leading-none`}
-      >
+      <div className="display-num font-display text-3xl font-medium leading-none sm:text-4xl lg:text-[44px]">
         {value}
       </div>
       {subValue ? (
