@@ -44,25 +44,6 @@ export async function getMeta(): Promise<SubgraphMeta> {
   return res._meta;
 }
 
-const RECENT_HANDLES_QUERY = gql`
-  query RecentHandles($first: Int!) {
-    handles(first: $first, orderBy: blockTimestamp, orderDirection: desc) {
-      id
-      operator
-      blockTimestamp
-      transactionHash
-      isPubliclyDecryptable
-    }
-  }
-`;
-
-export async function getRecentHandles(first = 12): Promise<HandleRow[]> {
-  const res = await client.request<{ handles: HandleRow[] }>(RECENT_HANDLES_QUERY, {
-    first,
-  });
-  return res.handles;
-}
-
 const HANDLES_PAGE_QUERY = gql`
   query HandlesPage($first: Int!, $skip: Int!, $where: Handle_filter) {
     handles(first: $first, skip: $skip, where: $where) {

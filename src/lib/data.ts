@@ -10,7 +10,6 @@ import { publicClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
 import {
   getMeta,
-  getRecentHandles,
   scanHandles,
   scanRoles,
   type HandleRow,
@@ -53,14 +52,12 @@ export type DashboardData = {
   };
   ops: OpsBreakdown;
   topOperators: { operator: string; count: number }[];
-  recent: HandleRow[];
 };
 
 export async function loadDashboard(): Promise<DashboardData> {
-  const [meta, prices, recentRaw, allHandlesRaw, roles] = await Promise.all([
+  const [meta, prices, allHandlesRaw, roles] = await Promise.all([
     getMeta(),
     getPrices(),
-    getRecentHandles(24),
     scanHandles({ pageSize: 1000, maxPages: 12 }),
     scanRoles({ pageSize: 1000, maxPages: 8 }),
   ]);
@@ -72,7 +69,6 @@ export async function loadDashboard(): Promise<DashboardData> {
     ...h,
     operator: h.operator?.trim() ? h.operator : "Unknown",
   });
-  const recent = recentRaw.map(normalizeOp);
   const allHandles = allHandlesRaw.map(normalizeOp);
 
   const now = Math.floor(Date.now() / 1000);
@@ -141,7 +137,6 @@ export async function loadDashboard(): Promise<DashboardData> {
     },
     ops,
     topOperators,
-    recent,
   };
 }
 
