@@ -1,6 +1,13 @@
-import { wrapperAbi, erc20Abi } from "./abi";
-import { TOKENS, opCategory, type OpCategory, type ConfidentialToken } from "./nox";
+import { wrapperAbi, erc20Abi, unwrapFinalizedEvent } from "./abi";
+import {
+  TOKENS,
+  opCategory,
+  NOX_COMPUTE_DEPLOY_BLOCK,
+  type OpCategory,
+  type ConfidentialToken,
+} from "./nox";
 import { publicClient } from "./viem";
+import { getPrices, priceFor, type Prices } from "./price";
 import {
   getMeta,
   getRecentHandles,
@@ -11,18 +18,30 @@ import {
 
 export type TokenStats = ConfidentialToken & {
   underlyingResolved: `0x${string}`;
-  underlyingSymbol: ConfidentialToken["underlyingSymbol"];
-  inferredTotalSupply: bigint;
-  confidentialTotalSupplyName: string;
-  underlyingName: string;
+  /** ERC-20 currently held by the wrapper (= current locked = TVL) */
+  tvl: bigint;
+  /** TVL + sum of all UnwrapFinalized plaintextAmount values (= cumulative inflows = TVS) */
+  tvs: bigint;
+  /** Cumulative ERC-20 outflows: sum of UnwrapFinalized.plaintextAmount */
+  cumulativeUnwraps: bigint;
+  /** Number of UnwrapFinalized events seen on-chain */
+  unwrapCount: number;
+  /** Same numbers in USD, using the live CoinGecko price */
+  tvlUsd: number;
+  tvsUsd: number;
+  /** Whether the UnwrapFinalized scan completed successfully */
+  unwrapsScanned: boolean;
 };
 
 export type OpsBreakdown = Record<OpCategory | "other", number>;
 
 export type DashboardData = {
   meta: { block: number; timestamp: number; lagSeconds: number };
+  prices: Prices;
   tokens: TokenStats[];
   totals: {
+    tvlUsd: number;
+    tvsUsd: number;
     handles: number;
     handlesLast24h: number;
     handlesLast7d: number;
@@ -38,13 +57,16 @@ export type DashboardData = {
 };
 
 export async function loadDashboard(): Promise<DashboardData> {
-  const [meta, tokenStats, recentRaw, allHandlesRaw, roles] = await Promise.all([
+  const [meta, prices, recentRaw, allHandlesRaw, roles] = await Promise.all([
     getMeta(),
-    loadTokenStats(),
+    getPrices(),
     getRecentHandles(24),
     scanHandles({ pageSize: 1000, maxPages: 12 }),
     scanRoles({ pageSize: 1000, maxPages: 8 }),
   ]);
+
+  // Token stats need the prices, so resolve them after prices arrive
+  const tokenStats = await loadTokenStats(prices);
 
   const normalizeOp = (h: HandleRow): HandleRow => ({
     ...h,
@@ -94,14 +116,20 @@ export async function loadDashboard(): Promise<DashboardData> {
     .slice(0, 8)
     .map(([operator, count]) => ({ operator, count }));
 
+  const tvlUsd = tokenStats.reduce((acc, t) => acc + t.tvlUsd, 0);
+  const tvsUsd = tokenStats.reduce((acc, t) => acc + t.tvsUsd, 0);
+
   return {
     meta: {
       block: meta.block.number,
       timestamp: meta.block.timestamp,
       lagSeconds: Math.max(0, now - meta.block.timestamp),
     },
+    prices,
     tokens: tokenStats,
     totals: {
+      tvlUsd,
+      tvsUsd,
       handles: allHandles.length,
       handlesLast24h,
       handlesLast7d,
@@ -117,46 +145,79 @@ export async function loadDashboard(): Promise<DashboardData> {
   };
 }
 
-async function loadTokenStats(): Promise<TokenStats[]> {
-  return Promise.all(TOKENS.map(loadOneTokenStats));
+async function loadTokenStats(prices: Prices): Promise<TokenStats[]> {
+  return Promise.all(TOKENS.map((t) => loadOneTokenStats(t, prices)));
 }
 
-async function loadOneTokenStats(token: ConfidentialToken): Promise<TokenStats> {
-  const [supply, underlying, confName] = await Promise.all([
+async function loadOneTokenStats(
+  token: ConfidentialToken,
+  prices: Prices,
+): Promise<TokenStats> {
+  const [tvl, underlying, unwraps] = await Promise.all([
     publicClient.readContract({
       address: token.wrapper,
       abi: wrapperAbi,
       functionName: "inferredTotalSupply",
-    }),
+    }) as Promise<bigint>,
     token.underlying
       ? Promise.resolve(token.underlying)
-      : publicClient.readContract({
+      : (publicClient.readContract({
           address: token.wrapper,
           abi: wrapperAbi,
           functionName: "underlying",
-        }),
-    publicClient
-      .readContract({
-        address: token.wrapper,
-        abi: wrapperAbi,
-        functionName: "name",
-      })
-      .catch(() => token.symbol),
+        }) as Promise<`0x${string}`>),
+    scanUnwrapFinalized(token.wrapper),
   ]);
 
-  const underlyingName = await publicClient
-    .readContract({
-      address: underlying as `0x${string}`,
-      abi: erc20Abi,
-      functionName: "name",
-    })
-    .catch(() => token.underlyingSymbol);
+  const tvs = tvl + unwraps.totalAmount;
+  const price = priceFor(token.underlyingSymbol, prices);
+  const divisor = 10n ** BigInt(token.decimals);
+  const toUsd = (raw: bigint): number => {
+    const whole = Number(raw / divisor);
+    const frac = Number(raw % divisor) / Number(divisor);
+    return (whole + frac) * price;
+  };
 
   return {
     ...token,
     underlyingResolved: underlying as `0x${string}`,
-    inferredTotalSupply: supply as bigint,
-    confidentialTotalSupplyName: confName as string,
-    underlyingName: underlyingName as string,
+    tvl,
+    tvs,
+    cumulativeUnwraps: unwraps.totalAmount,
+    unwrapCount: unwraps.count,
+    tvlUsd: toUsd(tvl),
+    tvsUsd: toUsd(tvs),
+    unwrapsScanned: unwraps.scanned,
   };
 }
+
+/**
+ * Scan all UnwrapFinalized events for a wrapper from the NoxCompute deploy
+ * block to now. Filtered by contract address so a single getLogs call is
+ * generally accepted even on the public Arbitrum Sepolia RPC. Returns a safe
+ * { count: 0, total: 0n, scanned: false } on failure so the page still renders.
+ */
+async function scanUnwrapFinalized(
+  wrapper: `0x${string}`,
+): Promise<{ count: number; totalAmount: bigint; scanned: boolean }> {
+  try {
+    const logs = await publicClient.getLogs({
+      address: wrapper,
+      event: unwrapFinalizedEvent,
+      fromBlock: NOX_COMPUTE_DEPLOY_BLOCK,
+      toBlock: "latest",
+    });
+    let totalAmount = 0n;
+    for (const log of logs) {
+      const amount = (log as unknown as { args: { plaintextAmount?: bigint } }).args
+        ?.plaintextAmount;
+      if (typeof amount === "bigint") totalAmount += amount;
+    }
+    return { count: logs.length, totalAmount, scanned: true };
+  } catch {
+    return { count: 0, totalAmount: 0n, scanned: false };
+  }
+}
+
+// Kept for back-compat with anything importing the previous symbol — no-op otherwise.
+export { erc20Abi };
