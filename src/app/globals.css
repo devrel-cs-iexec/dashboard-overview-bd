@@ -1,17 +1,35 @@
 @import "tailwindcss";
 
 /*
- * Theme tokens — aligned to iex.ec's live brand (2026): deep navy backgrounds,
- * purple/lavender as the primary accent, yellow kept only as a warmth highlight,
- * Anybody for display, Mulish for body, Geist Mono for tabular numbers.
+ * Theme tokens — live iex.ec brand (2026).
+ *
+ * iexec.com runs a *mix*: dark navy navbar + dark hero + light main body
+ * (off-white, near #E5EAF4) + dark footer. Yellow #fcd15a is the primary
+ * CTA fill, lavender #6e7edf / #92a1ff is the "hotword" accent on body
+ * copy. We mirror that here.
  */
 @theme inline {
-  --color-background: #0d0d12;
-  --color-foreground: #ffffff;
+  /* DARK shell (navbar, sidebar, footer, dashboard pages) */
+  --color-shell: #1d1d24;
+  --color-shell-2: #222839;
+  --color-shell-3: #303038;
+  --color-shell-fg: #ffffff;
 
-  --color-surface: #1d1d24;
-  --color-surface-2: #222839;
-  --color-surface-3: #303038;
+  /* LIGHT page body (landing, marketing sections) */
+  --color-page: #eef0f6;
+  --color-page-2: #ffffff;
+  --color-page-3: #f4f5fa;
+  --color-page-fg: #14141a;
+  --color-page-muted: #5d5d69;
+  --color-page-border: #d9dbe7;
+  --color-page-border-strong: #b9bcca;
+
+  /* default = dark shell so existing pages render unchanged */
+  --color-background: var(--color-shell);
+  --color-foreground: var(--color-shell-fg);
+  --color-surface: var(--color-shell);
+  --color-surface-2: var(--color-shell-2);
+  --color-surface-3: var(--color-shell-3);
 
   --color-border: rgba(255, 255, 255, 0.08);
   --color-border-strong: rgba(255, 255, 255, 0.16);
@@ -19,22 +37,23 @@
   --color-muted: rgba(229, 234, 244, 0.62);
   --color-muted-2: rgba(229, 234, 244, 0.42);
 
-  /* iExec lavender accent (the "hotword" colour from iex.ec) */
-  --color-accent: #92a1ff;
-  --color-accent-2: #6e7edf;
-  --color-accent-soft: #baa7ff;
-  --color-accent-dim: rgba(146, 161, 255, 0.18);
+  /* Accents */
+  --color-accent: #fcd15a;            /* primary CTA (iexec yellow) */
+  --color-accent-strong: #fdb40e;
+  --color-accent-dim: rgba(252, 209, 90, 0.16);
 
-  /* Secondary warmth accent */
-  --color-warm: #fcd15a;
-  --color-warm-dim: rgba(252, 209, 90, 0.16);
+  --color-lavender: #6e7edf;          /* iexec hotword */
+  --color-lavender-hover: #92a1ff;
+  --color-lavender-soft: #baa7ff;
+  --color-lavender-dim: rgba(110, 126, 223, 0.12);
 
-  /* Semantic */
-  --color-positive: #5fd49b;   /* shield / inflow */
-  --color-negative: #ff7d7d;   /* unshield / outflow */
   --color-info: #3898ec;
 
-  --color-confidential-usdc: #6e7edf;
+  /* Semantic */
+  --color-positive: #2fbf7f;
+  --color-negative: #ff7d7d;
+
+  --color-confidential-usdc: #2775ca;
   --color-confidential-rlc: #fcd15a;
 
   --font-sans: var(--font-sans);
@@ -51,20 +70,9 @@ body {
 
 body {
   min-height: 100vh;
-  background-image:
-    radial-gradient(ellipse 70% 45% at 50% -10%, rgba(146, 161, 255, 0.10), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(186, 167, 255, 0.05), transparent 60%);
-  background-attachment: fixed;
 }
 
-.bg-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: 56px 56px;
-  background-position: -1px -1px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 50%, transparent 100%);
-}
+/* ===== Surfaces ===== */
 
 .surface {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.005));
@@ -73,7 +81,7 @@ body {
 }
 
 .surface-solid {
-  background: var(--color-surface);
+  background: var(--color-shell);
   border: 1px solid var(--color-border);
 }
 
@@ -85,11 +93,48 @@ body {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
 }
 
-.display-num {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "ss01", "cv11";
-  letter-spacing: -0.03em;
+/* Light card on light page */
+.card-light {
+  background: var(--color-page-2);
+  border: 1px solid var(--color-page-border);
+  border-radius: 16px;
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
+.card-light:hover {
+  border-color: var(--color-page-border-strong);
+  box-shadow: 0 12px 32px -16px rgba(20, 20, 26, 0.12);
+}
+
+/* ===== Light page wrapper =====
+ * Apply `light-page` on any section/main that should render the
+ * "iex.ec marketing body" treatment (off-white background, dark text).
+ */
+.light-page {
+  background: var(--color-page);
+  color: var(--color-page-fg);
+}
+.light-page :where(.text-muted) {
+  color: var(--color-page-muted);
+}
+
+/* ===== Hero gradient backdrop (dark) ===== */
+.hero-dark {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(146, 161, 255, 0.20), transparent 65%),
+    radial-gradient(ellipse 80% 50% at 100% 100%, rgba(186, 167, 255, 0.10), transparent 60%),
+    var(--color-shell);
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: -1px -1px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 50%, transparent 100%);
+}
+
+/* ===== Typography helpers ===== */
 
 .font-display {
   font-family: var(--font-display), "Anybody", Inter, system-ui, sans-serif;
@@ -97,9 +142,57 @@ body {
   letter-spacing: -0.02em;
 }
 
-.pulse-dot {
-  position: relative;
+.display-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.03em;
 }
+
+/* ===== Buttons ===== */
+
+.btn-yellow {
+  background: var(--color-accent);
+  color: #14141a;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 0.625rem 1.25rem;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  transition: background 180ms ease, transform 180ms ease;
+}
+.btn-yellow:hover { background: var(--color-accent-strong); }
+.btn-yellow:active { transform: scale(0.985); }
+
+.btn-outline-dark {
+  background: transparent;
+  color: var(--color-shell-fg);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
+  padding: 0.625rem 1.25rem;
+  font-size: 14px;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+.btn-outline-dark:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.btn-outline-light {
+  background: transparent;
+  color: var(--color-page-fg);
+  border: 1px solid var(--color-page-border-strong);
+  border-radius: 9999px;
+  padding: 0.625rem 1.25rem;
+  font-size: 14px;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+.btn-outline-light:hover {
+  background: rgba(20, 20, 26, 0.04);
+  border-color: var(--color-page-fg);
+}
+
+/* ===== Indicators ===== */
+.pulse-dot { position: relative; }
 .pulse-dot::after {
   content: "";
   position: absolute;
@@ -119,5 +212,5 @@ body {
 
 ::selection {
   background: var(--color-accent);
-  color: var(--color-background);
+  color: #14141a;
 }
