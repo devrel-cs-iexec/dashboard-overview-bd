@@ -23,17 +23,44 @@ export type TvsEventVM = {
 
 type Filter = "all" | "shield" | "unshield";
 
+type TokenChip = {
+  /** "all" or the underlying symbol (e.g. "USDC", "RLC") */
+  key: string;
+  label: string;
+  /** background of the round glyph */
+  accent?: string;
+  /** small letter inside the glyph; falls back to symbol[0] */
+  glyph?: string;
+};
+
 const PAGE_SIZE = 20;
 
 export function TvsTable({ events }: { events: TvsEventVM[] }) {
   const [filter, setFilter] = useState<Filter>("all");
+  const [token, setToken] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+
+  const tokenChips: TokenChip[] = useMemo(() => {
+    const seen = new Map<string, { accent?: string }>();
+    for (const e of events) {
+      if (!seen.has(e.symbol)) seen.set(e.symbol, { accent: e.accent });
+    }
+    return [
+      { key: "all", label: "All Tokens" },
+      ...[...seen.entries()].map(([symbol, meta]) => ({
+        key: symbol,
+        label: symbol,
+        accent: meta.accent,
+      })),
+    ];
+  }, [events]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return events.filter((e) => {
       if (filter !== "all" && e.direction !== filter) return false;
+      if (token !== "all" && e.symbol !== token) return false;
       if (!q) return true;
       return (
         e.accountFull.toLowerCase().includes(q) ||
@@ -41,7 +68,7 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
         e.symbol.toLowerCase().includes(q)
       );
     });
-  }, [events, filter, query]);
+  }, [events, filter, token, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -50,6 +77,14 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
   return (
     <Reveal>
       <div className="surface-solid overflow-hidden rounded-2xl">
+        <TokenFilter
+          chips={tokenChips}
+          selected={token}
+          onSelect={(k) => {
+            setToken(k);
+            setPage(1);
+          }}
+        />
         <Toolbar
           filter={filter}
           onFilterChange={(f) => {
@@ -161,6 +196,60 @@ function Row({ e }: { e: TvsEventVM }) {
         </a>
       </td>
     </tr>
+  );
+}
+
+function TokenFilter({
+  chips,
+  selected,
+  onSelect,
+}: {
+  chips: TokenChip[];
+  selected: string;
+  onSelect: (key: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] px-5 py-4 sm:px-7">
+      {chips.map((chip) => {
+        const isActive = chip.key === selected;
+        return (
+          <button
+            key={chip.key}
+            onClick={() => onSelect(chip.key)}
+            className={`group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all ${
+              isActive
+                ? "border-[var(--color-accent)]/40 bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
+                : "border-[var(--color-border)] bg-[var(--color-surface-2)]/60 text-[var(--color-muted)] hover:border-[var(--color-border-strong)] hover:text-white"
+            }`}
+          >
+            <TokenChipGlyph chip={chip} />
+            <span className="tracking-tight">{chip.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function TokenChipGlyph({ chip }: { chip: TokenChip }) {
+  if (chip.key === "all") {
+    return (
+      <span
+        aria-hidden
+        className="grid size-5 place-items-center rounded-full border border-[var(--color-border-strong)] text-[8px] font-bold text-[var(--color-foreground)]/80"
+      >
+        ∗
+      </span>
+    );
+  }
+  return (
+    <span
+      aria-hidden
+      className="grid size-5 place-items-center rounded-full text-[9px] font-bold text-[#0d0d12]"
+      style={{ background: chip.accent ?? "var(--color-muted)" }}
+    >
+      {chip.glyph ?? chip.label[0]}
+    </span>
   );
 }
 
