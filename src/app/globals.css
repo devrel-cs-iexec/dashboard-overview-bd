@@ -1,25 +1,44 @@
 @import "tailwindcss";
 
+/*
+ * Theme tokens — aligned to iex.ec's live brand (2026): deep navy backgrounds,
+ * purple/lavender as the primary accent, yellow kept only as a warmth highlight,
+ * Anybody for display, Mulish for body, Geist Mono for tabular numbers.
+ */
 @theme inline {
-  --color-background: #050505;
-  --color-foreground: #fafafa;
+  --color-background: #0d0d12;
+  --color-foreground: #ffffff;
 
-  --color-surface: #0d0d10;
-  --color-surface-2: #14141a;
+  --color-surface: #1d1d24;
+  --color-surface-2: #222839;
+  --color-surface-3: #303038;
+
   --color-border: rgba(255, 255, 255, 0.08);
   --color-border-strong: rgba(255, 255, 255, 0.16);
 
-  --color-muted: rgba(255, 255, 255, 0.55);
-  --color-muted-2: rgba(255, 255, 255, 0.4);
+  --color-muted: rgba(229, 234, 244, 0.62);
+  --color-muted-2: rgba(229, 234, 244, 0.42);
 
-  --color-accent: #ffd21f;
-  --color-accent-dim: rgba(255, 210, 31, 0.16);
+  /* iExec lavender accent (the "hotword" colour from iex.ec) */
+  --color-accent: #92a1ff;
+  --color-accent-2: #6e7edf;
+  --color-accent-soft: #baa7ff;
+  --color-accent-dim: rgba(146, 161, 255, 0.18);
 
-  --color-confidential-usdc: #2775ca;
-  --color-confidential-rlc: #ffd21f;
+  /* Secondary warmth accent */
+  --color-warm: #fcd15a;
+  --color-warm-dim: rgba(252, 209, 90, 0.16);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Semantic */
+  --color-positive: #5fd49b;   /* shield / inflow */
+  --color-negative: #ff7d7d;   /* unshield / outflow */
+  --color-info: #3898ec;
+
+  --color-confidential-usdc: #6e7edf;
+  --color-confidential-rlc: #fcd15a;
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
   --font-display: var(--font-display);
 }
 
@@ -27,14 +46,14 @@ html,
 body {
   background: var(--color-background);
   color: var(--color-foreground);
-  font-family: var(--font-sans), Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), Mulish, Inter, system-ui, -apple-system, sans-serif;
 }
 
 body {
   min-height: 100vh;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 210, 31, 0.08), transparent 70%),
-    radial-gradient(ellipse 60% 50% at 100% 0%, rgba(39, 117, 202, 0.06), transparent 60%);
+    radial-gradient(ellipse 70% 45% at 50% -10%, rgba(146, 161, 255, 0.10), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(186, 167, 255, 0.05), transparent 60%);
   background-attachment: fixed;
 }
 
@@ -48,9 +67,14 @@ body {
 }
 
 .surface {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.005));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.005));
   border: 1px solid var(--color-border);
   backdrop-filter: blur(8px);
+}
+
+.surface-solid {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
 }
 
 .surface-hover {
@@ -65,6 +89,12 @@ body {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "ss01", "cv11";
   letter-spacing: -0.03em;
+}
+
+.font-display {
+  font-family: var(--font-display), "Anybody", Inter, system-ui, sans-serif;
+  font-stretch: 87.5%;
+  letter-spacing: -0.02em;
 }
 
 .pulse-dot {
@@ -89,5 +119,5 @@ body {
 
 ::selection {
   background: var(--color-accent);
-  color: #000;
+  color: var(--color-background);
 }
