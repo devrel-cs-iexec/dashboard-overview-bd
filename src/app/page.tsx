@@ -1,21 +1,23 @@
-import { Header } from "@/components/Header";
-import { Hero } from "@/components/Hero";
-import { TokensSection } from "@/components/TokensSection";
-import { OpsSection } from "@/components/OpsSection";
-import { Footer } from "@/components/Footer";
-import { loadDashboard } from "@/lib/data";
+import { TopNav } from "@/components/TopNav";
+import { HeroLanding } from "@/components/HeroLanding";
+import { SidebarGuide } from "@/components/SidebarGuide";
+import { BuildersBanner } from "@/components/BuildersBanner";
+import { RecentActivityLight } from "@/components/RecentActivityLight";
+import { FooterDark } from "@/components/FooterDark";
+import { getMeta } from "@/lib/subgraph";
 
-export const revalidate = 30;
+export const revalidate = 60;
 
 export default async function Page() {
-  const data = await loadDashboard();
+  const meta = await getMeta().catch(() => null);
   return (
     <main className="relative flex min-h-screen flex-col">
-      <Header lagSeconds={data.meta.lagSeconds} />
-      <Hero data={data} />
-      <TokensSection tokens={data.tokens} />
-      <OpsSection data={data} />
-      <Footer />
+      <TopNav variant="transparent" />
+      <HeroLanding subgraphBlock={meta?.block.number} />
+      <SidebarGuide />
+      <BuildersBanner />
+      <RecentActivityLight />
+      <FooterDark />
     </main>
   );
 }
