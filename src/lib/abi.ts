@@ -46,6 +46,16 @@ export const unwrapFinalizedEvent = {
   ],
 } as const;
 
+export const erc20TransferEvent = {
+  type: "event",
+  name: "Transfer",
+  inputs: [
+    { indexed: true, name: "from", type: "address" },
+    { indexed: true, name: "to", type: "address" },
+    { indexed: false, name: "value", type: "uint256" },
+  ],
+} as const;
+
 export const wrapperAbi = [
   ...erc20Abi,
   unwrapFinalizedEvent,
