@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/Sidebar";
+import { TopNav } from "@/components/TopNav";
 import { TvsTable, type TvsEventVM } from "@/components/TvsTable";
 import { loadTvsEvents } from "@/lib/tvs";
 import {
@@ -35,13 +36,15 @@ export default async function TvsPage() {
   const unshieldCount = events.filter((e) => e.direction === "unshield").length;
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar rlcPrice={payload.prices.rlc} />
+    <div className="min-h-screen">
+      <TopNav showOpenDashboard={false} />
+      <div className="flex">
+        <Sidebar rlcPrice={payload.prices.rlc} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Header partial={payload.partial} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Header partial={payload.partial} />
 
-        <main className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
+          <main className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
           <HeroStrip
             shieldedUsd={payload.shieldedUsd}
             unshieldedUsd={payload.unshieldedUsd}
@@ -50,10 +53,11 @@ export default async function TvsPage() {
             totalEvents={events.length}
           />
 
-          <div className="mt-8">
-            <TvsTable events={events} />
-          </div>
-        </main>
+            <div className="mt-8">
+              <TvsTable events={events} />
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );
