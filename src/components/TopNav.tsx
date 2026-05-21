@@ -27,8 +27,9 @@ export function TopNav({
         </Link>
 
         <ul className="hidden items-center gap-1 text-[13px] sm:flex">
-          <NavLink href="/tvs">Dashboard</NavLink>
-          <NavLink href="/status">Status</NavLink>
+          <NavLink href="https://iex.ec" external>
+            iex.ec
+          </NavLink>
           <NavLink href="https://docs.iex.ec" external>
             Docs
           </NavLink>
@@ -41,12 +42,6 @@ export function TopNav({
         </ul>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="mailto:contact@iex.ec?subject=NoxStats%20%E2%80%94%20contact"
-            className="btn-outline-dark hidden text-[13px] sm:inline-flex"
-          >
-            Contact Us
-          </Link>
           {showOpenDashboard ? (
             <Link href="/tvs" className="btn-yellow inline-flex items-center gap-2 text-[13px]">
               Open Dashboard
