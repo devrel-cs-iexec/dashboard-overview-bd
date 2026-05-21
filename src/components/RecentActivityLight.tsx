@@ -22,15 +22,18 @@ export async function RecentActivityLight() {
 
   return (
     <section className="bg-[var(--color-page-2)]">
-      <div className="mx-auto w-full max-w-7xl px-6 py-16 lg:px-10 lg:py-24">
+      <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:px-10 lg:py-28">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-lavender)]">
               Recent activity
             </div>
-            <h2 className="font-display mt-3 text-[34px] font-medium leading-[1.05] tracking-[-0.02em] text-[var(--color-page-fg)] sm:text-[44px]">
+            <h2 className="font-display mt-3 text-[32px] font-medium leading-[1.08] tracking-[-0.02em] text-[var(--color-page-fg)] sm:text-[40px]">
               Merged feed from every indexed wrapper.
             </h2>
+            <p className="mt-3 max-w-md text-[14px] leading-[1.55] text-[var(--color-page-muted)]">
+              Click an address to open its full activity profile in the app.
+            </p>
           </div>
           <div className="flex items-center gap-3 font-mono text-[11px] text-[var(--color-page-muted)]">
             <span className="inline-flex items-center gap-1.5">
@@ -44,10 +47,9 @@ export async function RecentActivityLight() {
         </div>
 
         <div className="card-light mt-8 overflow-hidden">
-          <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-b border-[var(--color-page-border)] px-5 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-page-muted)] sm:grid-cols-[1fr_1fr_auto_auto_auto] sm:px-7">
+          <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-b border-[var(--color-page-border)] px-5 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-page-muted)] sm:grid-cols-[1fr_2fr_auto_auto] sm:px-7">
             <span>Actor</span>
             <span className="hidden sm:block">Activity</span>
-            <span className="hidden sm:block">Amount</span>
             <span>Time</span>
             <span className="text-right">Tx</span>
           </div>
@@ -55,7 +57,7 @@ export async function RecentActivityLight() {
             {top.map((e) => (
               <li
                 key={e.id}
-                className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--color-page-3)] sm:grid-cols-[1fr_1fr_auto_auto_auto] sm:px-7"
+                className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-5 py-3 transition-colors hover:bg-[var(--color-page-3)] sm:grid-cols-[1fr_2fr_auto_auto] sm:px-7"
               >
                 <a
                   href={`https://sepolia.arbiscan.io/address/${e.account}`}
@@ -65,10 +67,11 @@ export async function RecentActivityLight() {
                 >
                   {shortAddress(e.account)}
                 </a>
-                <span className="hidden text-[12px] text-[var(--color-page-fg)]/85 sm:block">
+                <span className="hidden text-[12.5px] text-[var(--color-page-fg)]/85 sm:block">
                   <span className="text-[var(--color-page-muted)]">
-                    {e.symbol === "USDC" ? "Confidential / Stable" : "Confidential / RLC"} ·
-                  </span>{" "}
+                    {e.symbol === "USDC" ? "Confidential / Stable" : "Confidential / RLC"}
+                  </span>
+                  <span className="mx-1.5 text-[var(--color-page-border-strong)]">·</span>
                   <span
                     className={
                       e.direction === "shield"
@@ -78,12 +81,9 @@ export async function RecentActivityLight() {
                   >
                     {e.direction === "shield" ? "Shield" : "Unshield"}
                   </span>
-                </span>
-                <span className="hidden text-right font-mono text-[12px] text-[var(--color-page-fg)] sm:block">
-                  {formatTokenAmount(e.amount, e.decimals, 2)}{" "}
-                  <span className="text-[var(--color-page-muted)]">{e.symbol}</span>
-                  <span className="ml-2 text-[var(--color-page-muted)]">
-                    {formatUsd(e.amountUsd)}
+                  <span className="ml-2 font-mono text-[var(--color-page-muted)]">
+                    {formatTokenAmount(e.amount, e.decimals, 2)} {e.symbol}
+                    <span className="ml-1.5 opacity-80">{formatUsd(e.amountUsd)}</span>
                   </span>
                 </span>
                 <span className="font-mono text-[11px] text-[var(--color-page-muted)]">
@@ -101,6 +101,10 @@ export async function RecentActivityLight() {
             ))}
           </ul>
         </div>
+
+        <p className="mt-8 text-center font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-page-muted)]">
+          Built for iex.ec — open the dashboard for the full experience with sidebar and tools.
+        </p>
       </div>
     </section>
   );
