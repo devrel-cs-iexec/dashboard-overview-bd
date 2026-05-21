@@ -1,7 +1,6 @@
 import { TopNav } from "@/components/TopNav";
 import { HeroLanding } from "@/components/HeroLanding";
 import { SidebarGuide } from "@/components/SidebarGuide";
-import { BuildersBanner } from "@/components/BuildersBanner";
 import { RecentActivityLight } from "@/components/RecentActivityLight";
 import { FooterDark } from "@/components/FooterDark";
 import { getMeta } from "@/lib/subgraph";
@@ -15,7 +14,6 @@ export default async function Page() {
       <TopNav variant="transparent" />
       <HeroLanding subgraphBlock={meta?.block.number} />
       <SidebarGuide />
-      <BuildersBanner />
       <RecentActivityLight />
       <FooterDark />
     </main>
