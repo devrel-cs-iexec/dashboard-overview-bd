@@ -21,13 +21,13 @@ const anybody = Anybody({
 });
 
 export const metadata: Metadata = {
-  title: "Nox Protocol · confidential DeFi infrastructure",
+  title: "Nox · live protocol activity, then dive into every tool",
   description:
-    "Real-time analytics for the Nox Protocol — encrypted balances, TEE-attested computation, value secured.",
+    "Follow live on-chain activity across the Nox protocol in one feed. Open the dashboard for TVS, charts, and every module in the sidebar.",
   openGraph: {
-    title: "Nox Protocol — Confidential DeFi, in clear view",
+    title: "Nox · live protocol activity",
     description:
-      "Total value secured, encrypted operations, and live activity on the Nox Protocol.",
+      "Real-time view of the Nox protocol — shielding, staking, decryption, and every module in one place.",
   },
 };
 
