@@ -1,4 +1,4 @@
-import { wrapperAbi, unwrapFinalizedEvent, erc20TransferEvent } from "./abi";
+import { wrapperAbi, erc20TransferEvent, unwrapFinalizedEvent } from "./abi";
 import { TOKENS, NOX_COMPUTE_DEPLOY_BLOCK, type ConfidentialToken } from "./nox";
 import { publicClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
@@ -52,10 +52,11 @@ export async function loadTvsEvents(): Promise<TvsPayload> {
   const events = perToken.flatMap((p) => p.events);
   const partial = perToken.some((p) => p.partial);
 
-  // Decorate with block timestamps in a single batched pass
-  const blocks = [...new Set(events.map((e) => e.blockNumber))];
+  // Ponder unshield events already carry timestamps; only shield events (RPC) need block lookups
+  const eventsNeedingTs = events.filter((e) => e.timestamp === 0);
+  const blocks = [...new Set(eventsNeedingTs.map((e) => e.blockNumber))];
   const blockTs = await fetchBlockTimestamps(blocks);
-  for (const e of events) {
+  for (const e of eventsNeedingTs) {
     e.timestamp = blockTs.get(e.blockNumber) ?? 0;
   }
 
@@ -80,7 +81,6 @@ async function loadOneTokenEvents(
   token: ConfidentialToken,
   prices: Prices,
 ): Promise<Bucket> {
-  // Resolve underlying address if not pinned in config (cUSDC case)
   const underlying =
     token.underlying ??
     ((await publicClient.readContract({
@@ -89,6 +89,8 @@ async function loadOneTokenEvents(
       functionName: "underlying",
     })) as `0x${string}`);
 
+  // Shield events: ERC-20 Transfer to wrapper (plaintext amount in log)
+  // Unshield events: UnwrapFinalized on the wrapper (plaintextAmount field in the event)
   const [shieldLogs, unshieldLogs] = await Promise.allSettled([
     publicClient.getLogs({
       address: underlying,
@@ -105,8 +107,7 @@ async function loadOneTokenEvents(
     }),
   ]);
 
-  const partial =
-    shieldLogs.status === "rejected" || unshieldLogs.status === "rejected";
+  const partial = shieldLogs.status === "rejected" || unshieldLogs.status === "rejected";
   const events: TvsEvent[] = [];
 
   const price = priceFor(token.underlyingSymbol, prices);
@@ -136,7 +137,7 @@ async function loadOneTokenEvents(
         amount,
         amountUsd: toUsd(amount),
         blockNumber: log.blockNumber ?? 0n,
-        timestamp: 0,
+        timestamp: 0, // filled later via fetchBlockTimestamps
         transactionHash: log.transactionHash as `0x${string}`,
         logIndex: log.logIndex ?? 0,
       });
@@ -146,9 +147,9 @@ async function loadOneTokenEvents(
   if (unshieldLogs.status === "fulfilled") {
     for (const log of unshieldLogs.value) {
       const args = (log as unknown as { args: Record<string, unknown> }).args;
-      const amount = args?.plaintextAmount as bigint | undefined;
       const receiver = args?.receiver as `0x${string}` | undefined;
-      if (typeof amount !== "bigint" || !receiver) continue;
+      const plaintextAmount = args?.plaintextAmount as bigint | undefined;
+      if (typeof plaintextAmount !== "bigint" || !receiver) continue;
       events.push({
         id: `${log.transactionHash}-${log.logIndex}`,
         direction: "unshield",
@@ -159,10 +160,10 @@ async function loadOneTokenEvents(
         decimals: token.decimals,
         accent: token.accent,
         account: receiver,
-        amount,
-        amountUsd: toUsd(amount),
+        amount: plaintextAmount,
+        amountUsd: toUsd(plaintextAmount),
         blockNumber: log.blockNumber ?? 0n,
-        timestamp: 0,
+        timestamp: 0, // filled by fetchBlockTimestamps
         transactionHash: log.transactionHash as `0x${string}`,
         logIndex: log.logIndex ?? 0,
       });

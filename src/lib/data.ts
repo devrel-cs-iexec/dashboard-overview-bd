@@ -14,21 +14,24 @@ import {
   scanRoles,
   type HandleRow,
 } from "./subgraph";
+import { getPonderTokenStats } from "./ponder";
 
 export type TokenStats = ConfidentialToken & {
   underlyingResolved: `0x${string}`;
   /** ERC-20 currently held by the wrapper (= current locked = TVL) */
   tvl: bigint;
-  /** TVL + sum of all UnwrapFinalized plaintextAmount values (= cumulative inflows = TVS) */
+  /** TVL + sum of all finalized unwrap plaintextAmounts (= cumulative inflows = TVS) */
   tvs: bigint;
-  /** Cumulative ERC-20 outflows: sum of UnwrapFinalized.plaintextAmount */
+  /** Cumulative ERC-20 outflows: sum of finalized unwrap plaintextAmounts */
   cumulativeUnwraps: bigint;
-  /** Number of UnwrapFinalized events seen on-chain */
+  /** Number of finalized unwrap events indexed by Ponder */
   unwrapCount: number;
+  /** Unique wallets that ever interacted with this token (from Ponder) */
+  holderCount: number;
   /** Same numbers in USD, using the live CoinGecko price */
   tvlUsd: number;
   tvsUsd: number;
-  /** Whether the UnwrapFinalized scan completed successfully */
+  /** Whether the Ponder scan completed successfully */
   unwrapsScanned: boolean;
 };
 
@@ -141,14 +144,17 @@ export async function loadDashboard(): Promise<DashboardData> {
 }
 
 async function loadTokenStats(prices: Prices): Promise<TokenStats[]> {
-  return Promise.all(TOKENS.map((t) => loadOneTokenStats(t, prices)));
+  const results = await Promise.allSettled(TOKENS.map((t) => loadOneTokenStats(t, prices)));
+  return results
+    .filter((r): r is PromiseFulfilledResult<TokenStats> => r.status === "fulfilled")
+    .map((r) => r.value);
 }
 
 async function loadOneTokenStats(
   token: ConfidentialToken,
   prices: Prices,
 ): Promise<TokenStats> {
-  const [tvl, underlying, unwraps] = await Promise.all([
+  const [tvl, underlying, ponderStats, unwrapLogs] = await Promise.all([
     publicClient.readContract({
       address: token.wrapper,
       abi: wrapperAbi,
@@ -161,10 +167,25 @@ async function loadOneTokenStats(
           abi: wrapperAbi,
           functionName: "underlying",
         }) as Promise<`0x${string}`>),
-    scanUnwrapFinalized(token.wrapper),
+    getPonderTokenStats(token.wrapper),
+    publicClient
+      .getLogs({
+        address: token.wrapper,
+        event: unwrapFinalizedEvent,
+        fromBlock: NOX_COMPUTE_DEPLOY_BLOCK,
+        toBlock: "latest",
+      })
+      .catch(() => [] as never[]),
   ]);
 
-  const tvs = tvl + unwraps.totalAmount;
+  let cumulativeUnwraps = 0n;
+  for (const log of unwrapLogs) {
+    const args = (log as unknown as { args: Record<string, unknown> }).args;
+    const amt = args?.plaintextAmount as bigint | undefined;
+    if (typeof amt === "bigint") cumulativeUnwraps += amt;
+  }
+
+  const tvs = tvl + cumulativeUnwraps;
   const price = priceFor(token.underlyingSymbol, prices);
   const divisor = 10n ** BigInt(token.decimals);
   const toUsd = (raw: bigint): number => {
@@ -178,41 +199,13 @@ async function loadOneTokenStats(
     underlyingResolved: underlying as `0x${string}`,
     tvl,
     tvs,
-    cumulativeUnwraps: unwraps.totalAmount,
-    unwrapCount: unwraps.count,
+    cumulativeUnwraps,
+    unwrapCount: unwrapLogs.length,
+    holderCount: ponderStats ? Number(ponderStats.holderCount) : 0,
     tvlUsd: toUsd(tvl),
     tvsUsd: toUsd(tvs),
-    unwrapsScanned: unwraps.scanned,
+    unwrapsScanned: true,
   };
 }
 
-/**
- * Scan all UnwrapFinalized events for a wrapper from the NoxCompute deploy
- * block to now. Filtered by contract address so a single getLogs call is
- * generally accepted even on the public Arbitrum Sepolia RPC. Returns a safe
- * { count: 0, total: 0n, scanned: false } on failure so the page still renders.
- */
-async function scanUnwrapFinalized(
-  wrapper: `0x${string}`,
-): Promise<{ count: number; totalAmount: bigint; scanned: boolean }> {
-  try {
-    const logs = await publicClient.getLogs({
-      address: wrapper,
-      event: unwrapFinalizedEvent,
-      fromBlock: NOX_COMPUTE_DEPLOY_BLOCK,
-      toBlock: "latest",
-    });
-    let totalAmount = 0n;
-    for (const log of logs) {
-      const amount = (log as unknown as { args: { plaintextAmount?: bigint } }).args
-        ?.plaintextAmount;
-      if (typeof amount === "bigint") totalAmount += amount;
-    }
-    return { count: logs.length, totalAmount, scanned: true };
-  } catch {
-    return { count: 0, totalAmount: 0n, scanned: false };
-  }
-}
-
-// Kept for back-compat with anything importing the previous symbol — no-op otherwise.
 export { erc20Abi };
