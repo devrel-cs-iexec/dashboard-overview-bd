@@ -39,7 +39,7 @@ export default async function TvsPage() {
     <div className="min-h-screen">
       <TopNav showOpenDashboard={false} />
       <div className="flex">
-        <Sidebar rlcPrice={payload.prices.rlc} />
+        <Sidebar rlcPrice={payload.prices.rlc} activeKey="tvs" />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <Header partial={payload.partial} />
@@ -109,8 +109,8 @@ function HeroStrip({
       <div className="max-w-3xl">
         <p className="text-[14px] leading-[1.55] text-[var(--color-muted)]">
           Every confidential token shield (ERC-20 → ERC-7984) and unshield event since
-          the protocol&apos;s deploy block. Each row is sourced from on-chain logs only —
-          no subgraph, no off-chain accounting.
+          the protocol&apos;s deploy block. Shield amounts from ERC-20 Transfer logs;
+          unshield amounts from on-chain UnwrapFinalized events (plaintext amount revealed post-finalization).
         </p>
       </div>
 

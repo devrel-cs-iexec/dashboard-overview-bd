@@ -3,7 +3,7 @@ import { FooterDark } from "@/components/FooterDark";
 import { getMeta } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
 import { publicClient } from "@/lib/viem";
-import { SUBGRAPH_URL, NOX_COMPUTE, TOKENS, arbitrumSepolia } from "@/lib/nox";
+import { NOX_COMPUTE, TOKENS, arbitrumSepolia } from "@/lib/nox";
 import { relativeTime, shortAddress } from "@/lib/format";
 
 export const revalidate = 30;
@@ -189,31 +189,28 @@ async function checkSubgraph(): Promise<Check> {
   try {
     const meta = await getMeta();
     const ms = Date.now() - t0;
-    const lag = Math.floor(Date.now() / 1000) - meta.block.timestamp;
+    const lag = meta.block.timestamp > 0
+      ? Math.floor(Date.now() / 1000) - meta.block.timestamp
+      : null;
+    const syncing = meta.block.number === 0;
     return {
-      name: "Nox subgraph",
-      detail: "Self-hosted at thegraph.arbitrum-sepolia-testnet.noxprotocol.io. Powers handles, roles, ops breakdown.",
-      status: meta.hasIndexingErrors
-        ? "warn"
-        : lag > 120
-        ? "warn"
-        : ms < 1500
-        ? "ok"
-        : "warn",
+      name: "Ponder indexer",
+      detail: "Local Ponder node at localhost:42069. Powers handles, roles, ops breakdown, confidential transfers.",
+      status: syncing ? "warn" : lag !== null && lag > 300 ? "warn" : ms < 2000 ? "ok" : "warn",
       meta: [
-        { label: "Head block", value: meta.block.number.toLocaleString() },
-        { label: "Indexer lag", value: lag > 0 ? relativeTime(meta.block.timestamp) : "live" },
+        { label: "Head block", value: syncing ? "syncing…" : meta.block.number.toLocaleString() },
+        { label: "Indexer lag", value: syncing ? "backfilling" : lag !== null && lag > 0 ? relativeTime(meta.block.timestamp) : "live" },
         { label: "Round-trip", value: `${ms} ms` },
-        { label: "Indexing errors", value: meta.hasIndexingErrors ? "yes" : "none" },
+        { label: "Endpoint", value: "localhost:42069/graphql" },
       ],
     };
   } catch (e) {
     return {
-      name: "Nox subgraph",
-      detail: "Subgraph unreachable — handle stats and ops breakdown would fall back to empty.",
+      name: "Ponder indexer",
+      detail: "Ponder not running — start with `npm run dev` in the nox-subgraph-ERC repo.",
       status: "down",
       meta: [
-        { label: "Endpoint", value: SUBGRAPH_URL.replace("https://", "") },
+        { label: "Endpoint", value: "localhost:42069/graphql" },
         { label: "Error", value: errorMessage(e) },
       ],
     };
