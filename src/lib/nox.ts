@@ -18,9 +18,6 @@ export const NOX_COMPUTE_DEPLOY_BLOCK = 250991603n;
 
 export const VAULT_FACTORY: Address = "0xB9390D62E3272ef88b812B28bD0A57a4580937EE";
 
-export const SUBGRAPH_URL =
-  "https://thegraph.arbitrum-sepolia-testnet.noxprotocol.io/api/subgraphs/id/BjQAX2HpmsSAzURJimKDhjZZnkSJtaczA8RPumggrStb";
-
 export type ConfidentialToken = {
   id: "cUSDC" | "cRLC";
   symbol: "cUSDC" | "cRLC";
