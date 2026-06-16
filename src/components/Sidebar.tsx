@@ -3,41 +3,39 @@ import Link from "next/link";
 type NavItem = {
   key: string;
   label: string;
-  href?: string;
-  active?: boolean;
-  soon?: boolean;
+  href: string;
 };
 
 const SECTIONS: { kicker: string; items: NavItem[] }[] = [
   {
     kicker: "Dashboards",
     items: [
-      { key: "tvs", label: "TVS Dashboard", href: "/tvs", active: true },
-      { key: "transfers", label: "Confidential Transfers", soon: true },
-      { key: "wraps", label: "Shield / Unshield", soon: true },
-      { key: "events", label: "Nox Events", soon: true },
-      { key: "address", label: "Address Profile", soon: true },
+      { key: "tvs", label: "TVS Dashboard", href: "/tvs" },
+      { key: "transfers", label: "Confidential Transfers", href: "/transfers" },
+      { key: "wraps", label: "Shield / Unshield", href: "/wraps" },
+      { key: "events", label: "Nox Events", href: "/events" },
+      { key: "address", label: "Address Profile", href: "/address" },
     ],
   },
   {
     kicker: "Compute",
     items: [
-      { key: "ops", label: "Operation Stats", soon: true },
-      { key: "viewers", label: "Public Decryption", soon: true },
-      { key: "acl", label: "ACL Audit", soon: true },
+      { key: "ops", label: "Operation Stats", href: "/ops" },
+      { key: "viewers", label: "Public Decryption", href: "/viewers" },
+      { key: "acl", label: "ACL Audit", href: "/acl" },
     ],
   },
   {
     kicker: "Search",
     items: [
-      { key: "search", label: "Advanced Search", soon: true },
-      { key: "block", label: "Block Inspector", soon: true },
-      { key: "verify", label: "Input Verification", soon: true },
+      { key: "search", label: "Advanced Search", href: "/search" },
+      { key: "block", label: "Block Inspector", href: "/block" },
+      { key: "verify", label: "Input Verification", href: "/verify" },
     ],
   },
 ];
 
-export function Sidebar({ rlcPrice }: { rlcPrice?: number }) {
+export function Sidebar({ rlcPrice, activeKey }: { rlcPrice?: number; activeKey?: string }) {
   return (
     <aside className="hidden w-[244px] shrink-0 border-r border-[var(--color-border)] bg-[var(--color-surface)]/70 backdrop-blur-md lg:flex lg:flex-col">
       <Link
@@ -59,7 +57,7 @@ export function Sidebar({ rlcPrice }: { rlcPrice?: number }) {
             <ul className="space-y-0.5">
               {section.items.map((item) => (
                 <li key={item.key}>
-                  <NavLink item={item} />
+                  <NavLink item={item} active={item.key === activeKey} />
                 </li>
               ))}
             </ul>
@@ -86,45 +84,26 @@ export function Sidebar({ rlcPrice }: { rlcPrice?: number }) {
   );
 }
 
-function NavLink({ item }: { item: NavItem }) {
+function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   const base =
-    "group flex items-center justify-between rounded-md px-3 py-2 text-[13px] transition-colors";
-  if (item.active) {
+    "group flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] transition-colors";
+  if (active) {
     return (
       <span
         className={`${base} bg-[var(--color-accent-dim)] font-semibold text-[var(--color-accent-soft)] ring-1 ring-inset ring-[var(--color-accent)]/30`}
       >
-        <span className="flex items-center gap-2.5">
-          <Dot accent />
-          {item.label}
-        </span>
-      </span>
-    );
-  }
-  if (item.soon) {
-    return (
-      <span
-        className={`${base} cursor-not-allowed text-[var(--color-muted-2)] opacity-80`}
-      >
-        <span className="flex items-center gap-2.5">
-          <Dot />
-          {item.label}
-        </span>
-        <span className="rounded border border-[var(--color-border)] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-[var(--color-muted-2)]">
-          soon
-        </span>
+        <Dot accent />
+        {item.label}
       </span>
     );
   }
   return (
     <Link
-      href={item.href ?? "#"}
+      href={item.href}
       className={`${base} text-[var(--color-muted)] hover:bg-white/[0.03] hover:text-white`}
     >
-      <span className="flex items-center gap-2.5">
-        <Dot />
-        {item.label}
-      </span>
+      <Dot />
+      {item.label}
     </Link>
   );
 }

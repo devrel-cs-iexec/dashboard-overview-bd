@@ -83,9 +83,14 @@ function TokenCard({ token }: { token: TokenStats }) {
           <span>
             <span className="text-[var(--color-muted-2)]">Events:</span> {token.unwrapCount}
           </span>
+          <span className="text-[var(--color-muted-2)]">·</span>
+          <span>
+            <span className="text-[var(--color-muted-2)]">Holders:</span>{" "}
+            {token.holderCount > 0 ? token.holderCount.toLocaleString() : "—"}
+          </span>
           {!token.unwrapsScanned ? (
             <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-300/90">
-              scan unavailable
+              ponder unavailable
             </span>
           ) : null}
         </div>
