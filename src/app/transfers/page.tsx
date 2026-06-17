@@ -64,7 +64,7 @@ export default async function TransfersPage() {
                   <>
                     <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.22em] text-amber-400">Ponder offline</div>
                     <p className="text-[14px] text-[var(--color-muted)]">
-                      Start the Ponder indexer (<code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[12px]">npm run start</code> in the subgraph repo) to populate this feed.
+                      Start the Ponder indexer (<code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[12px]">npm run start</code> in the indexer repo) to populate this feed.
                     </p>
                   </>
                 )}

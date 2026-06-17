@@ -72,7 +72,7 @@ export default async function VerifyPage({
               <div className="surface-solid rounded-2xl px-8 py-16 text-center">
                 <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-negative)]">Not found</div>
                 <p className="text-[14px] text-[var(--color-muted)]">
-                  Handle <span className="font-mono text-white">{shortAddress(handleId!)}</span> does not exist in the indexed subgraph.
+                  Handle <span className="font-mono text-white">{shortAddress(handleId!)}</span> does not exist in the Ponder index.
                 </p>
               </div>
             )}
@@ -143,7 +143,7 @@ export default async function VerifyPage({
                 <div className="surface-solid rounded-xl p-5">
                   <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#a78bfa]">Verification confirms</div>
                   <ul className="mt-2 space-y-1 text-[13px] text-[var(--color-muted)]">
-                    <li>· The handle exists in the indexed subgraph</li>
+                    <li>· The handle exists in the Ponder index</li>
                     <li>· Which operation produced it</li>
                     <li>· Whether anyone can decrypt it publicly</li>
                     <li>· The transaction and block it appeared in</li>
