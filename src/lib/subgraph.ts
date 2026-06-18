@@ -91,17 +91,9 @@ function toRoleRow(g: PonderGrant): HandleRoleRow {
 // ── getMeta ───────────────────────────────────────────────────────────────────
 
 const META_QUERY = gql`
-  query Meta($chainId: Int!) {
-    fheHandles(
-      where: { chainId: $chainId }
-      orderBy: "blockNumber"
-      orderDirection: "desc"
-      limit: 1
-    ) {
-      items {
-        blockNumber
-        timestamp
-      }
+  query Meta {
+    _meta {
+      status
     }
   }
 `;
@@ -109,17 +101,15 @@ const META_QUERY = gql`
 export async function getMeta(): Promise<SubgraphMeta> {
   try {
     const res = await client.request<{
-      fheHandles: { items: { blockNumber: string; timestamp: string }[] };
-    }>(META_QUERY, { chainId: ARB_SEPOLIA });
-    const latest = res.fheHandles.items[0];
-    if (!latest) {
-      return { block: { number: 0, timestamp: 0 }, hasIndexingErrors: false };
-    }
+      _meta: { status: Record<string, { block: { number: number; timestamp: number } }> };
+    }>(META_QUERY);
+    const chains = Object.values(res._meta.status);
+    const latest = chains.reduce(
+      (best, c) => (c.block.number > best.block.number ? c : best),
+      chains[0] ?? { block: { number: 0, timestamp: 0 } },
+    );
     return {
-      block: {
-        number: Number(latest.blockNumber),
-        timestamp: Number(latest.timestamp),
-      },
+      block: { number: latest.block.number, timestamp: latest.block.timestamp },
       hasIndexingErrors: false,
     };
   } catch {
