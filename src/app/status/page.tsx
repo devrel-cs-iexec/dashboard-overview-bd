@@ -2,7 +2,7 @@ import { TopNav } from "@/components/TopNav";
 import { FooterDark } from "@/components/FooterDark";
 import { getMeta } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
-import { publicClient } from "@/lib/viem";
+import { publicClient, ethSepoliaClient } from "@/lib/viem";
 import { NOX_COMPUTE, TOKENS, arbitrumSepolia } from "@/lib/nox";
 import { relativeTime, shortAddress } from "@/lib/format";
 
@@ -20,7 +20,7 @@ export default async function StatusPage() {
     checkRpc(),
     checkSubgraph(),
     checkPrices(),
-    ...TOKENS.map((t) => checkWrapper(t.wrapper, t.symbol)),
+    ...TOKENS.map((t) => checkWrapper(t.wrapper, t.symbol, t.chainId)),
   ]);
 
   const okCount = checks.filter((c) => c.status === "ok").length;
@@ -243,14 +243,16 @@ async function checkPrices(): Promise<Check> {
   }
 }
 
-async function checkWrapper(address: `0x${string}`, symbol: string): Promise<Check> {
+async function checkWrapper(address: `0x${string}`, symbol: string, chainId: number): Promise<Check> {
   const t0 = Date.now();
+  const chain = chainId === 11155111 ? "ETH" : "ARB";
+  const client = chainId === 11155111 ? ethSepoliaClient : publicClient;
   try {
-    const code = await publicClient.getBytecode({ address });
+    const code = await client.getBytecode({ address });
     const ms = Date.now() - t0;
     const deployed = !!code && code !== "0x";
     return {
-      name: `${symbol} wrapper`,
+      name: `${symbol} wrapper (${chain})`,
       detail: `ERC20→ERC-7984 wrapper at ${shortAddress(address)}. NoxCompute proxy: ${shortAddress(NOX_COMPUTE)}.`,
       status: deployed ? "ok" : "down",
       meta: [
@@ -261,7 +263,7 @@ async function checkWrapper(address: `0x${string}`, symbol: string): Promise<Che
     };
   } catch (e) {
     return {
-      name: `${symbol} wrapper`,
+      name: `${symbol} wrapper (${chain})`,
       detail: "RPC failed to confirm wrapper deployment.",
       status: "down",
       meta: [{ label: "Error", value: errorMessage(e) }],

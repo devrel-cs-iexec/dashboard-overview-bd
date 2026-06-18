@@ -12,7 +12,7 @@ export const publicClient = createPublicClient({
 
 export const ethSepoliaClient = createPublicClient({
   chain: ethereumSepolia,
-  transport: http(undefined, {
+  transport: http(process.env.ETH_SEPOLIA_RPC_URL, {
     batch: { wait: 16 },
     retryCount: 2,
     retryDelay: 200,
