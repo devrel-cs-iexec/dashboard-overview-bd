@@ -19,6 +19,7 @@ export default async function TvsPage() {
     direction: e.direction,
     symbol: e.symbol,
     confidentialSymbol: e.confidentialSymbol,
+    chainId: e.chainId,
     accountFull: e.account,
     accountShort: shortAddress(e.account),
     amount: formatTokenAmount(e.amount, e.decimals, 2),

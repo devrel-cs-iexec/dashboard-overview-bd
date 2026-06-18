@@ -8,6 +8,7 @@ export type TvsEventVM = {
   direction: "shield" | "unshield";
   symbol: string;
   confidentialSymbol: string;
+  chainId: number;
   accountFull: string;
   accountShort: string;
   amount: string;
@@ -144,11 +145,12 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
 }
 
 function Row({ e }: { e: TvsEventVM }) {
+  const explorer = e.chainId === 11155111 ? "https://sepolia.etherscan.io" : "https://sepolia.arbiscan.io";
   return (
     <tr className="border-b border-[var(--color-border)]/60 transition-colors last:border-0 hover:bg-white/[0.02]">
       <td className="px-5 py-3 font-mono text-[12px] text-[var(--color-foreground)]/85 sm:px-7">
         <a
-          href={`https://sepolia.arbiscan.io/address/${e.accountFull}`}
+          href={`${explorer}/address/${e.accountFull}`}
           target="_blank"
           rel="noreferrer"
           className="hover:text-[var(--color-accent)]"
@@ -187,7 +189,7 @@ function Row({ e }: { e: TvsEventVM }) {
       </td>
       <td className="px-5 py-3 text-right sm:px-7">
         <a
-          href={`https://sepolia.arbiscan.io/tx/${e.txHash}`}
+          href={`${explorer}/tx/${e.txHash}`}
           target="_blank"
           rel="noreferrer"
           className="font-mono text-[12px] text-[var(--color-muted)] transition-colors hover:text-[var(--color-accent)]"

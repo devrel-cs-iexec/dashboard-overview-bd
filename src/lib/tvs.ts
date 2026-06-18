@@ -1,7 +1,8 @@
 import { wrapperAbi, erc20TransferEvent, unwrapFinalizedEvent } from "./abi";
-import { TOKENS, NOX_COMPUTE_DEPLOY_BLOCK, type ConfidentialToken } from "./nox";
-import { publicClient } from "./viem";
+import { TOKENS, type ConfidentialToken } from "./nox";
+import { publicClient, ethSepoliaClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
+import type { PublicClient } from "viem";
 
 export type TvsEventDirection = "shield" | "unshield";
 
@@ -12,6 +13,7 @@ export type TvsEvent = {
   /** Token symbol the user interacts with (e.g. USDC for shield, RLC etc.) */
   symbol: ConfidentialToken["underlyingSymbol"];
   confidentialSymbol: ConfidentialToken["symbol"];
+  chainId: number;
   wrapper: `0x${string}`;
   underlying: `0x${string}`;
   decimals: number;
@@ -37,6 +39,10 @@ export type TvsPayload = {
   prices: Prices;
 };
 
+function clientForChain(chainId: number): PublicClient {
+  return chainId === 11155111 ? (ethSepoliaClient as unknown as PublicClient) : (publicClient as unknown as PublicClient);
+}
+
 /**
  * Pull wrap (ERC-20 Transfer to wrapper) + unwrap (UnwrapFinalized) events for
  * every supported token, decorate with timestamps via batched getBlock calls,
@@ -52,13 +58,17 @@ export async function loadTvsEvents(): Promise<TvsPayload> {
   const events = perToken.flatMap((p) => p.events);
   const partial = perToken.some((p) => p.partial);
 
-  // Ponder unshield events already carry timestamps; only shield events (RPC) need block lookups
-  const eventsNeedingTs = events.filter((e) => e.timestamp === 0);
-  const blocks = [...new Set(eventsNeedingTs.map((e) => e.blockNumber))];
-  const blockTs = await fetchBlockTimestamps(blocks);
-  for (const e of eventsNeedingTs) {
-    e.timestamp = blockTs.get(e.blockNumber) ?? 0;
-  }
+  // Fill timestamps per chain — block numbers are chain-specific
+  const arbEvents = events.filter((e) => e.chainId !== 11155111 && e.timestamp === 0);
+  const ethEvents = events.filter((e) => e.chainId === 11155111 && e.timestamp === 0);
+
+  const [arbTs, ethTs] = await Promise.all([
+    fetchBlockTimestamps([...new Set(arbEvents.map((e) => e.blockNumber))], publicClient as unknown as PublicClient),
+    fetchBlockTimestamps([...new Set(ethEvents.map((e) => e.blockNumber))], ethSepoliaClient as unknown as PublicClient),
+  ]);
+
+  for (const e of arbEvents) e.timestamp = arbTs.get(e.blockNumber) ?? 0;
+  for (const e of ethEvents) e.timestamp = ethTs.get(e.blockNumber) ?? 0;
 
   events.sort((a, b) => {
     if (a.blockNumber === b.blockNumber) return b.logIndex - a.logIndex;
@@ -81,9 +91,11 @@ async function loadOneTokenEvents(
   token: ConfidentialToken,
   prices: Prices,
 ): Promise<Bucket> {
+  const client = clientForChain(token.chainId);
+
   const underlying =
     token.underlying ??
-    ((await publicClient.readContract({
+    ((await client.readContract({
       address: token.wrapper,
       abi: wrapperAbi,
       functionName: "underlying",
@@ -92,17 +104,17 @@ async function loadOneTokenEvents(
   // Shield events: ERC-20 Transfer to wrapper (plaintext amount in log)
   // Unshield events: UnwrapFinalized on the wrapper (plaintextAmount field in the event)
   const [shieldLogs, unshieldLogs] = await Promise.allSettled([
-    publicClient.getLogs({
+    client.getLogs({
       address: underlying,
       event: erc20TransferEvent,
       args: { to: token.wrapper },
-      fromBlock: NOX_COMPUTE_DEPLOY_BLOCK,
+      fromBlock: token.fromBlock,
       toBlock: "latest",
     }),
-    publicClient.getLogs({
+    client.getLogs({
       address: token.wrapper,
       event: unwrapFinalizedEvent,
-      fromBlock: NOX_COMPUTE_DEPLOY_BLOCK,
+      fromBlock: token.fromBlock,
       toBlock: "latest",
     }),
   ]);
@@ -129,6 +141,7 @@ async function loadOneTokenEvents(
         direction: "shield",
         symbol: token.underlyingSymbol,
         confidentialSymbol: token.symbol,
+        chainId: token.chainId,
         wrapper: token.wrapper,
         underlying,
         decimals: token.decimals,
@@ -155,6 +168,7 @@ async function loadOneTokenEvents(
         direction: "unshield",
         symbol: token.underlyingSymbol,
         confidentialSymbol: token.symbol,
+        chainId: token.chainId,
         wrapper: token.wrapper,
         underlying,
         decimals: token.decimals,
@@ -179,6 +193,7 @@ async function loadOneTokenEvents(
  */
 async function fetchBlockTimestamps(
   blocks: bigint[],
+  client: PublicClient,
 ): Promise<Map<bigint, number>> {
   const out = new Map<bigint, number>();
   const window = 8;
@@ -186,7 +201,7 @@ async function fetchBlockTimestamps(
     const slice = blocks.slice(i, i + window);
     const results = await Promise.allSettled(
       slice.map((b) =>
-        publicClient.getBlock({ blockNumber: b, includeTransactions: false }),
+        client.getBlock({ blockNumber: b, includeTransactions: false }),
       ),
     );
     results.forEach((r, idx) => {

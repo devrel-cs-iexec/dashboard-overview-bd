@@ -15,6 +15,7 @@ export default async function WrapsPage() {
     direction: e.direction,
     symbol: e.symbol,
     confidentialSymbol: e.confidentialSymbol,
+    chainId: e.chainId,
     accountFull: e.account,
     accountShort: shortAddress(e.account),
     amount: formatTokenAmount(e.amount, e.decimals, 2),
@@ -29,7 +30,7 @@ export default async function WrapsPage() {
   }));
 
   const byToken = TOKENS.map((t) => {
-    const tokenEvents = events.filter((e) => e.symbol === t.underlyingSymbol);
+    const tokenEvents = events.filter((e) => e.symbol === t.underlyingSymbol && e.chainId === t.chainId);
     const shields = tokenEvents.filter((e) => e.direction === "shield");
     const unshields = tokenEvents.filter((e) => e.direction === "unshield");
     return { ...t, shields, unshields, total: tokenEvents.length };
@@ -64,12 +65,17 @@ export default async function WrapsPage() {
             <div className="mb-8 grid gap-4 lg:grid-cols-2">
               {byToken.map((t) => (
                 <div
-                  key={t.id}
+                  key={`${t.id}-${t.chainId}`}
                   className="surface-solid rounded-xl p-5"
                   style={{ borderLeft: `2px solid ${t.accent}` }}
                 >
                   <div className="mb-4 flex items-center justify-between">
-                    <span className="font-display text-[16px] font-medium">{t.symbol}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-display text-[16px] font-medium">{t.symbol}</span>
+                      <span className={`inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] ${t.chainId === 421614 ? "border border-blue-500/30 bg-blue-500/10 text-blue-400" : "border border-purple-500/30 bg-purple-500/10 text-purple-400"}`}>
+                        {t.chainId === 421614 ? "ARB" : "ETH"}
+                      </span>
+                    </div>
                     <span className="font-mono text-[11px] text-[var(--color-muted)]">
                       {t.total.toLocaleString()} events
                     </span>

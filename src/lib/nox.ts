@@ -13,6 +13,19 @@ export const arbitrumSepolia = defineChain({
   testnet: true,
 });
 
+export const ethereumSepolia = defineChain({
+  id: 11155111,
+  name: "Ethereum Sepolia",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://ethereum-sepolia-rpc.publicnode.com"] },
+  },
+  blockExplorers: {
+    default: { name: "Etherscan", url: "https://sepolia.etherscan.io" },
+  },
+  testnet: true,
+});
+
 export const NOX_COMPUTE: Address = "0xd464B198f06756a1d00be223634b85E0a731c229";
 export const NOX_COMPUTE_DEPLOY_BLOCK = 250991603n;
 
@@ -22,8 +35,10 @@ export type ConfidentialToken = {
   id: "cUSDC" | "cRLC";
   symbol: "cUSDC" | "cRLC";
   underlyingSymbol: "USDC" | "RLC";
+  chainId: 421614 | 11155111;
   wrapper: Address;
   underlying: Address | null;
+  fromBlock: bigint;
   decimals: number;
   accent: string;
   description: string;
@@ -34,8 +49,10 @@ export const TOKENS: readonly ConfidentialToken[] = [
     id: "cUSDC",
     symbol: "cUSDC",
     underlyingSymbol: "USDC",
+    chainId: 421614,
     wrapper: "0x1ccec6bc60db15e4055d43dc2531bb7d4e5b808e",
     underlying: null,
+    fromBlock: NOX_COMPUTE_DEPLOY_BLOCK,
     decimals: 6,
     accent: "#2775CA",
     description: "Confidential USD Coin — encrypted balances, public collateral.",
@@ -44,11 +61,37 @@ export const TOKENS: readonly ConfidentialToken[] = [
     id: "cRLC",
     symbol: "cRLC",
     underlyingSymbol: "RLC",
+    chainId: 421614,
     wrapper: "0x92b23f4a59175415ced5cb37e64a1fc6a9d79af4",
     underlying: "0x9923eD3cbd90CD78b910c475f9A731A6e0b8C963",
+    fromBlock: NOX_COMPUTE_DEPLOY_BLOCK,
     decimals: 9,
     accent: "#FFD21F",
     description: "Confidential RLC — the iExec token, now private by default.",
+  },
+  {
+    id: "cRLC",
+    symbol: "cRLC",
+    underlyingSymbol: "RLC",
+    chainId: 11155111,
+    wrapper: "0xCF220069B8D803047D9fe773e059A1E4981DAa68",
+    underlying: "0x26A738b6D33EF4D94FF084D3552961b8f00639Cd",
+    fromBlock: 8_000_000n,
+    decimals: 9,
+    accent: "#FFD21F",
+    description: "Confidential RLC — the iExec token, now private by default.",
+  },
+  {
+    id: "cUSDC",
+    symbol: "cUSDC",
+    underlyingSymbol: "USDC",
+    chainId: 11155111,
+    wrapper: "0x12b7025544088F35101245AF046Cb92E91D17D2C",
+    underlying: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    fromBlock: 8_000_000n,
+    decimals: 6,
+    accent: "#2775CA",
+    description: "Confidential USD Coin — encrypted balances, public collateral.",
   },
 ] as const;
 
