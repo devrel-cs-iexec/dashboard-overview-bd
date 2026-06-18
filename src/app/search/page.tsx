@@ -3,7 +3,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { getHandlesByTx } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
 import { opCategory } from "@/lib/nox";
-import { relativeTime, shortAddress } from "@/lib/format";
+import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
+import { ChainBadge } from "@/components/ChainBadge";
 
 export const revalidate = 0;
 
@@ -84,7 +85,7 @@ export default async function SearchPage({
                 <div className="border-b border-[var(--color-border)] px-5 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)] sm:px-7">
                   {handles.length} handle{handles.length !== 1 ? "s" : ""} in tx{" "}
                   <a
-                    href={`https://sepolia.arbiscan.io/tx/${query}`}
+                    href={explorerTx(handles[0]?.chainId ?? 421614, query!)}
                     target="_blank"
                     rel="noreferrer"
                     className="text-[var(--color-accent)] hover:underline"
@@ -96,6 +97,7 @@ export default async function SearchPage({
                   <thead>
                     <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
                       <th className="px-5 py-3 font-mono font-normal sm:px-7">Handle ID</th>
+                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
                       <th className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
                       <th className="px-5 py-3 font-mono font-normal sm:px-7">Category</th>
                       <th className="px-5 py-3 font-mono font-normal sm:px-7">Public</th>
@@ -109,6 +111,9 @@ export default async function SearchPage({
                         <tr key={h.id} className="border-b border-[var(--color-border)]/60 last:border-0 hover:bg-white/[0.02]">
                           <td className="px-5 py-3 font-mono text-[11px] text-[var(--color-foreground)]/60 sm:px-7">
                             {shortAddress(h.id)}
+                          </td>
+                          <td className="px-5 py-3 sm:px-7">
+                            <ChainBadge chainId={h.chainId} />
                           </td>
                           <td className="px-5 py-3 font-mono text-[12px] font-medium text-white sm:px-7">
                             {h.operator}

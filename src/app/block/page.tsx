@@ -4,7 +4,7 @@ import { getHandlesByTimestampRange } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
 import { publicClient } from "@/lib/viem";
 import { opCategory } from "@/lib/nox";
-import { relativeTime, shortAddress } from "@/lib/format";
+import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
 
 export const revalidate = 0;
 
@@ -139,7 +139,7 @@ export default async function BlockPage({
                             )}
                           </td>
                           <td className="px-5 py-3 text-right sm:px-7">
-                            <a href={`https://sepolia.arbiscan.io/tx/${h.transactionHash}`} target="_blank" rel="noreferrer" className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]">
+                            <a href={explorerTx(h.chainId, h.transactionHash)} target="_blank" rel="noreferrer" className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]">
                               {shortAddress(h.transactionHash)} ↗
                             </a>
                           </td>

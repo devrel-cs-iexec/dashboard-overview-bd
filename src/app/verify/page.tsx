@@ -3,7 +3,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { getHandleById } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
 import { opCategory } from "@/lib/nox";
-import { relativeTime, shortAddress } from "@/lib/format";
+import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
 
 export const revalidate = 0;
 
@@ -96,6 +96,7 @@ export default async function VerifyPage({
                   <div className="surface-solid overflow-hidden rounded-2xl">
                     {[
                       { label: "Handle ID", value: handle.id },
+                      { label: "Chain", value: handle.chainId === 421614 ? "Arbitrum Sepolia" : "Ethereum Sepolia" },
                       { label: "Operation", value: handle.operator },
                       { label: "Category", value: cat },
                       { label: "Publicly decryptable", value: handle.isPubliclyDecryptable ? "Yes — anyone can request plaintext" : "No — encrypted only" },
@@ -114,7 +115,7 @@ export default async function VerifyPage({
                             </span>
                           ) : label === "Transaction" ? (
                             <a
-                              href={`https://sepolia.arbiscan.io/tx/${value}`}
+                              href={explorerTx(handle.chainId, value)}
                               target="_blank"
                               rel="noreferrer"
                               className="text-[var(--color-accent)] hover:underline"

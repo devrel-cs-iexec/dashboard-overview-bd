@@ -2,7 +2,8 @@ import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
 import { scanConfidentialTransfers } from "@/lib/ponder";
 import { getPrices } from "@/lib/price";
-import { relativeTime, shortAddress } from "@/lib/format";
+import { relativeTime, shortAddress, explorerTx, explorerAddress } from "@/lib/format";
+import { ChainBadge } from "@/components/ChainBadge";
 import { TOKENS } from "@/lib/nox";
 
 export const revalidate = 60;
@@ -96,6 +97,7 @@ export default async function TransfersPage() {
                       <thead>
                         <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">Type</th>
+                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">From</th>
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">To</th>
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">Token</th>
@@ -123,11 +125,14 @@ export default async function TransfersPage() {
                                   {style.label}
                                 </span>
                               </td>
+                              <td className="px-5 py-3 sm:px-7">
+                                <ChainBadge chainId={t.chainId} />
+                              </td>
                               <td className="px-5 py-3 font-mono text-[12px] sm:px-7">
                                 {t.from === "0x0000000000000000000000000000000000000000" ? (
                                   <span className="text-[var(--color-muted-2)]">—</span>
                                 ) : (
-                                  <a href={`https://sepolia.arbiscan.io/address/${t.from}`} target="_blank" rel="noreferrer" className="text-[var(--color-foreground)]/85 hover:text-[var(--color-accent)]">
+                                  <a href={explorerAddress(t.chainId, t.from)} target="_blank" rel="noreferrer" className="text-[var(--color-foreground)]/85 hover:text-[var(--color-accent)]">
                                     {shortAddress(t.from)}
                                   </a>
                                 )}
@@ -136,7 +141,7 @@ export default async function TransfersPage() {
                                 {t.to === "0x0000000000000000000000000000000000000000" ? (
                                   <span className="text-[var(--color-muted-2)]">—</span>
                                 ) : (
-                                  <a href={`https://sepolia.arbiscan.io/address/${t.to}`} target="_blank" rel="noreferrer" className="text-[var(--color-foreground)]/85 hover:text-[var(--color-accent)]">
+                                  <a href={explorerAddress(t.chainId, t.to)} target="_blank" rel="noreferrer" className="text-[var(--color-foreground)]/85 hover:text-[var(--color-accent)]">
                                     {shortAddress(t.to)}
                                   </a>
                                 )}
@@ -148,7 +153,7 @@ export default async function TransfersPage() {
                                 {relativeTime(Number(t.timestamp))}
                               </td>
                               <td className="px-5 py-3 text-right sm:px-7">
-                                <a href={`https://sepolia.arbiscan.io/tx/${t.transactionHash}`} target="_blank" rel="noreferrer" className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]">
+                                <a href={explorerTx(t.chainId, t.transactionHash)} target="_blank" rel="noreferrer" className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]">
                                   {shortAddress(t.transactionHash)} ↗
                                 </a>
                               </td>

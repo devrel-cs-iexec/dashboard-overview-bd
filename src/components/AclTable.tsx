@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import type { HandleRoleRow } from "@/lib/subgraph";
-import { relativeTime, shortAddress } from "@/lib/format";
+import { relativeTime, shortAddress, explorerAddress } from "@/lib/format";
+import { ChainBadge } from "./ChainBadge";
 
 const PAGE_SIZE = 25;
 
@@ -64,6 +65,7 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
           <thead>
             <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
               <th className="px-5 py-3 font-mono font-normal sm:px-7">Account</th>
+              <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
               <th className="px-5 py-3 font-mono font-normal sm:px-7">Role</th>
               <th className="px-5 py-3 font-mono font-normal sm:px-7">Granted By</th>
               <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Time</th>
@@ -72,7 +74,7 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
           <tbody>
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-7 py-10 text-center text-[var(--color-muted)]">
+                <td colSpan={5} className="px-7 py-10 text-center text-[var(--color-muted)]">
                   No grants match the current filter.
                 </td>
               </tr>
@@ -84,13 +86,16 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
                 >
                   <td className="px-5 py-3 font-mono text-[12px] sm:px-7">
                     <a
-                      href={`https://sepolia.arbiscan.io/address/${r.account}`}
+                      href={explorerAddress(r.chainId, r.account)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-[var(--color-foreground)]/85 hover:text-[var(--color-accent)]"
                     >
                       {shortAddress(r.account)}
                     </a>
+                  </td>
+                  <td className="px-5 py-3 sm:px-7">
+                    <ChainBadge chainId={r.chainId} />
                   </td>
                   <td className="px-5 py-3 sm:px-7">
                     {r.role === "ADMIN" ? (
@@ -105,7 +110,7 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
                   </td>
                   <td className="px-5 py-3 font-mono text-[12px] sm:px-7">
                     <a
-                      href={`https://sepolia.arbiscan.io/address/${r.grantedBy}`}
+                      href={explorerAddress(r.chainId, r.grantedBy)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-[var(--color-muted)] hover:text-[var(--color-accent)]"

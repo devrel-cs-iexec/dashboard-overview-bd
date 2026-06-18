@@ -8,7 +8,7 @@
 import { GraphQLClient, gql } from "graphql-request";
 
 const PONDER_URL = process.env.PONDER_URL ?? "http://localhost:42069/graphql";
-const CHAIN_ID = 421614; // Arbitrum Sepolia
+const ARB_SEPOLIA = 421614; // used only for getMeta and block-inspector queries
 
 const client = new GraphQLClient(PONDER_URL, {
   fetch: (input, init) =>
@@ -25,6 +25,7 @@ export type HandleRow = {
   transactionHash: string;
   isPubliclyDecryptable: boolean;
   blockNumber?: string;
+  chainId: number;
 };
 
 export type HandleRoleRow = {
@@ -33,6 +34,7 @@ export type HandleRoleRow = {
   role: "ADMIN" | "VIEWER";
   grantedBy: string;
   blockTimestamp: string;
+  chainId: number;
 };
 
 export type SubgraphMeta = {
@@ -50,6 +52,7 @@ type PonderHandle = {
   blockNumber: string;
   transactionHash: string;
   isPubliclyDecryptable: boolean;
+  chainId: number;
 };
 
 type PonderGrant = {
@@ -59,6 +62,7 @@ type PonderGrant = {
   grantedBy: string;
   timestamp: string;
   transactionHash: string;
+  chainId: number;
 };
 
 function toHandleRow(h: PonderHandle): HandleRow {
@@ -69,6 +73,7 @@ function toHandleRow(h: PonderHandle): HandleRow {
     transactionHash: h.transactionHash,
     isPubliclyDecryptable: h.isPubliclyDecryptable,
     blockNumber: h.blockNumber,
+    chainId: h.chainId,
   };
 }
 
@@ -79,6 +84,7 @@ function toRoleRow(g: PonderGrant): HandleRoleRow {
     role: g.role as "ADMIN" | "VIEWER",
     grantedBy: g.grantedBy,
     blockTimestamp: g.timestamp,
+    chainId: g.chainId,
   };
 }
 
@@ -104,7 +110,7 @@ export async function getMeta(): Promise<SubgraphMeta> {
   try {
     const res = await client.request<{
       fheHandles: { items: { blockNumber: string; timestamp: string }[] };
-    }>(META_QUERY, { chainId: CHAIN_ID });
+    }>(META_QUERY, { chainId: ARB_SEPOLIA });
     const latest = res.fheHandles.items[0];
     if (!latest) {
       return { block: { number: 0, timestamp: 0 }, hasIndexingErrors: false };
@@ -124,9 +130,9 @@ export async function getMeta(): Promise<SubgraphMeta> {
 // ── scanHandles ───────────────────────────────────────────────────────────────
 
 const HANDLES_PAGE_QUERY = gql`
-  query HandlesPage($chainId: Int!, $limit: Int!, $after: String, $publicOnly: Boolean) {
+  query HandlesPage($limit: Int!, $after: String) {
     fheHandles(
-      where: { chainId: $chainId, isPubliclyDecryptable: $publicOnly }
+      where: { isPubliclyDecryptable: true }
       orderBy: "timestamp"
       orderDirection: "desc"
       limit: $limit
@@ -140,6 +146,7 @@ const HANDLES_PAGE_QUERY = gql`
         blockNumber
         transactionHash
         isPubliclyDecryptable
+        chainId
       }
       pageInfo {
         hasNextPage
@@ -149,11 +156,9 @@ const HANDLES_PAGE_QUERY = gql`
   }
 `;
 
-// Ponder doesn't support null for boolean where filters — use a separate query
 const HANDLES_ALL_QUERY = gql`
-  query HandlesAll($chainId: Int!, $limit: Int!, $after: String) {
+  query HandlesAll($limit: Int!, $after: String) {
     fheHandles(
-      where: { chainId: $chainId }
       orderBy: "timestamp"
       orderDirection: "desc"
       limit: $limit
@@ -167,6 +172,7 @@ const HANDLES_ALL_QUERY = gql`
         blockNumber
         transactionHash
         isPubliclyDecryptable
+        chainId
       }
       pageInfo {
         hasNextPage
@@ -192,25 +198,15 @@ export async function scanHandles(opts: {
     let res: R;
     try {
       if (opts.publicOnly) {
-        res = await client.request<R>(HANDLES_PAGE_QUERY, {
-          chainId: CHAIN_ID,
-          limit: pageSize,
-          after,
-          publicOnly: true,
-        });
+        res = await client.request<R>(HANDLES_PAGE_QUERY, { limit: pageSize, after });
       } else {
-        res = await client.request<R>(HANDLES_ALL_QUERY, {
-          chainId: CHAIN_ID,
-          limit: pageSize,
-          after,
-        });
+        res = await client.request<R>(HANDLES_ALL_QUERY, { limit: pageSize, after });
       }
     } catch {
       break;
     }
 
     const items = res.fheHandles.items;
-    // Filter by since if provided
     const filtered = opts.since
       ? items.filter((h) => Number(h.timestamp) >= opts.since!)
       : items;
@@ -225,9 +221,8 @@ export async function scanHandles(opts: {
 // ── scanRoles ─────────────────────────────────────────────────────────────────
 
 const GRANTS_PAGE_QUERY = gql`
-  query GrantsPage($chainId: Int!, $limit: Int!, $after: String) {
+  query GrantsPage($limit: Int!, $after: String) {
     aclGrants(
-      where: { chainId: $chainId }
       orderBy: "timestamp"
       orderDirection: "desc"
       limit: $limit
@@ -240,6 +235,7 @@ const GRANTS_PAGE_QUERY = gql`
         grantedBy
         timestamp
         transactionHash
+        chainId
       }
       pageInfo {
         hasNextPage
@@ -262,11 +258,7 @@ export async function scanRoles(opts: {
     type R = { aclGrants: { items: PonderGrant[]; pageInfo: { hasNextPage: boolean; endCursor: string } } };
     let res: R;
     try {
-      res = await client.request<R>(GRANTS_PAGE_QUERY, {
-        chainId: CHAIN_ID,
-        limit: pageSize,
-        after,
-      });
+      res = await client.request<R>(GRANTS_PAGE_QUERY, { limit: pageSize, after });
     } catch {
       break;
     }
@@ -280,9 +272,9 @@ export async function scanRoles(opts: {
 // ── getHandlesByTx ────────────────────────────────────────────────────────────
 
 const HANDLES_BY_TX_QUERY = gql`
-  query HandlesByTx($chainId: Int!, $txHash: String!) {
+  query HandlesByTx($txHash: String!) {
     fheHandles(
-      where: { chainId: $chainId, transactionHash: $txHash }
+      where: { transactionHash: $txHash }
       limit: 1000
     ) {
       items {
@@ -293,6 +285,7 @@ const HANDLES_BY_TX_QUERY = gql`
         blockNumber
         transactionHash
         isPubliclyDecryptable
+        chainId
       }
     }
   }
@@ -302,7 +295,7 @@ export async function getHandlesByTx(txHash: string): Promise<HandleRow[]> {
   try {
     const res = await client.request<{ fheHandles: { items: PonderHandle[] } }>(
       HANDLES_BY_TX_QUERY,
-      { chainId: CHAIN_ID, txHash: txHash.toLowerCase() },
+      { txHash: txHash.toLowerCase() },
     );
     return res.fheHandles.items.map(toHandleRow);
   } catch {
@@ -322,6 +315,7 @@ const HANDLE_BY_ID_QUERY = gql`
       blockNumber
       transactionHash
       isPubliclyDecryptable
+      chainId
     }
   }
 `;
@@ -356,6 +350,7 @@ const HANDLES_BY_TS_QUERY = gql`
         blockNumber
         transactionHash
         isPubliclyDecryptable
+        chainId
       }
     }
   }
@@ -369,7 +364,7 @@ export async function getHandlesByTimestampRange(
   try {
     const res = await client.request<{ fheHandles: { items: PonderHandle[] } }>(
       HANDLES_BY_TS_QUERY,
-      { chainId: CHAIN_ID, gte: String(gte), lt: String(lt), limit },
+      { chainId: ARB_SEPOLIA, gte: String(gte), lt: String(lt), limit },
     );
     return res.fheHandles.items.map(toHandleRow);
   } catch {

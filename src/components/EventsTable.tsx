@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import type { HandleRow } from "@/lib/subgraph";
 import { opCategory, type OpCategory } from "@/lib/nox";
-import { relativeTime, shortAddress } from "@/lib/format";
+import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
+import { ChainBadge } from "./ChainBadge";
 
 export type EventRow = HandleRow & { category: OpCategory | "other" };
 
@@ -86,6 +87,7 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
           <thead>
             <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
               <th className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
+              <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
               <th className="px-5 py-3 font-mono font-normal sm:px-7">Category</th>
               <th className="px-5 py-3 font-mono font-normal sm:px-7">Public</th>
               <th className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
@@ -95,7 +97,7 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
           <tbody>
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-7 py-10 text-center text-[var(--color-muted)]">
+                <td colSpan={6} className="px-7 py-10 text-center text-[var(--color-muted)]">
                   No events match the current filter.
                 </td>
               </tr>
@@ -107,6 +109,9 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                 >
                   <td className="px-5 py-3 font-mono text-[12px] font-medium text-white sm:px-7">
                     {r.operator}
+                  </td>
+                  <td className="px-5 py-3 sm:px-7">
+                    <ChainBadge chainId={r.chainId} />
                   </td>
                   <td className="px-5 py-3 sm:px-7">
                     <span
@@ -132,7 +137,7 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                   </td>
                   <td className="px-5 py-3 text-right sm:px-7">
                     <a
-                      href={`https://sepolia.arbiscan.io/tx/${r.transactionHash}`}
+                      href={explorerTx(r.chainId, r.transactionHash)}
                       target="_blank"
                       rel="noreferrer"
                       className="font-mono text-[12px] text-[var(--color-muted)] transition-colors hover:text-[var(--color-accent)]"

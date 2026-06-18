@@ -33,6 +33,18 @@ export function formatTokenCompact(raw: bigint, decimals: number): string {
   return formatCompactNumber(whole + frac, 2);
 }
 
+export function explorerTx(chainId: number, txHash: string): string {
+  return chainId === 421614
+    ? `https://sepolia.arbiscan.io/tx/${txHash}`
+    : `https://sepolia.etherscan.io/tx/${txHash}`;
+}
+
+export function explorerAddress(chainId: number, address: string): string {
+  return chainId === 421614
+    ? `https://sepolia.arbiscan.io/address/${address}`
+    : `https://sepolia.etherscan.io/address/${address}`;
+}
+
 export function shortAddress(address: string): string {
   if (!address?.startsWith("0x") || address.length < 12) return address;
   return `${address.slice(0, 6)}…${address.slice(-4)}`;

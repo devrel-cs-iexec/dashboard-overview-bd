@@ -1,7 +1,7 @@
 import { GraphQLClient, gql } from "graphql-request";
 
 const PONDER_URL = process.env.PONDER_URL ?? "http://localhost:42069/graphql";
-const CHAIN_ID = 421614;
+const ARB_SEPOLIA = 421614;
 
 const client = new GraphQLClient(PONDER_URL, {
   fetch: (input, init) =>
@@ -15,7 +15,6 @@ export type PonderTokenStats = {
   mintCount: string;
   burnCount: string;
 };
-
 
 const TOKEN_STATS_QUERY = gql`
   query TokenStats($address: String!, $chainId: Int!) {
@@ -39,14 +38,13 @@ export async function getPonderTokenStats(
       tokens: { items: PonderTokenStats[] };
     }>(TOKEN_STATS_QUERY, {
       address: address.toLowerCase(),
-      chainId: CHAIN_ID,
+      chainId: ARB_SEPOLIA,
     });
     return res.tokens.items[0] ?? null;
   } catch {
     return null;
   }
 }
-
 
 export type PonderConfidentialTransfer = {
   id: string;
@@ -57,12 +55,12 @@ export type PonderConfidentialTransfer = {
   timestamp: string;
   transactionHash: string;
   logIndex: number;
+  chainId: number;
 };
 
 const CONFIDENTIAL_TRANSFERS_QUERY = gql`
-  query ConfidentialTransfers($chainId: Int!, $limit: Int!, $after: String) {
+  query ConfidentialTransfers($limit: Int!, $after: String) {
     confidentialTransfers(
-      where: { chainId: $chainId }
       orderBy: "timestamp"
       orderDirection: "desc"
       limit: $limit
@@ -77,6 +75,7 @@ const CONFIDENTIAL_TRANSFERS_QUERY = gql`
         timestamp
         transactionHash
         logIndex
+        chainId
       }
       pageInfo {
         hasNextPage
@@ -101,7 +100,6 @@ export type ScanTransfersResult = {
 export async function scanConfidentialTransfers(limit = 200): Promise<ScanTransfersResult> {
   try {
     const res: ConfidentialTransfersResponse = await client.request(CONFIDENTIAL_TRANSFERS_QUERY, {
-      chainId: CHAIN_ID,
       limit,
       after: null,
     });
@@ -110,4 +108,3 @@ export async function scanConfidentialTransfers(limit = 200): Promise<ScanTransf
     return { items: [], online: false };
   }
 }
-

@@ -2,7 +2,8 @@ import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
 import { scanHandles } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
-import { relativeTime, shortAddress } from "@/lib/format";
+import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
+import { ChainBadge } from "@/components/ChainBadge";
 
 export const revalidate = 60;
 
@@ -64,6 +65,7 @@ export default async function ViewersPage() {
                   <thead>
                     <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
                       <th className="px-5 py-3 font-mono font-normal sm:px-7">Handle ID</th>
+                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
                       <th className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
                       <th className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
                       <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
@@ -78,6 +80,9 @@ export default async function ViewersPage() {
                         <td className="px-5 py-3 font-mono text-[11px] text-[var(--color-foreground)]/70 sm:px-7">
                           {shortAddress(h.id)}
                         </td>
+                        <td className="px-5 py-3 sm:px-7">
+                          <ChainBadge chainId={h.chainId} />
+                        </td>
                         <td className="px-5 py-3 font-mono text-[12px] font-medium text-white sm:px-7">
                           {h.operator}
                         </td>
@@ -86,7 +91,7 @@ export default async function ViewersPage() {
                         </td>
                         <td className="px-5 py-3 text-right sm:px-7">
                           <a
-                            href={`https://sepolia.arbiscan.io/tx/${h.transactionHash}`}
+                            href={explorerTx(h.chainId, h.transactionHash)}
                             target="_blank"
                             rel="noreferrer"
                             className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]"
