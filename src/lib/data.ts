@@ -2,11 +2,10 @@ import { wrapperAbi, erc20Abi, unwrapFinalizedEvent } from "./abi";
 import {
   TOKENS,
   opCategory,
-  NOX_COMPUTE_DEPLOY_BLOCK,
   type OpCategory,
   type ConfidentialToken,
 } from "./nox";
-import { publicClient } from "./viem";
+import { publicClient, ethSepoliaClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
 import {
   getMeta,
@@ -154,25 +153,26 @@ async function loadOneTokenStats(
   token: ConfidentialToken,
   prices: Prices,
 ): Promise<TokenStats> {
+  const client = token.chainId === 11155111 ? ethSepoliaClient : publicClient;
   const [tvl, underlying, ponderStats, unwrapLogs] = await Promise.all([
-    publicClient.readContract({
+    client.readContract({
       address: token.wrapper,
       abi: wrapperAbi,
       functionName: "inferredTotalSupply",
     }) as Promise<bigint>,
     token.underlying
       ? Promise.resolve(token.underlying)
-      : (publicClient.readContract({
+      : (client.readContract({
           address: token.wrapper,
           abi: wrapperAbi,
           functionName: "underlying",
         }) as Promise<`0x${string}`>),
     getPonderTokenStats(token.wrapper),
-    publicClient
+    client
       .getLogs({
         address: token.wrapper,
         event: unwrapFinalizedEvent,
-        fromBlock: NOX_COMPUTE_DEPLOY_BLOCK,
+        fromBlock: token.fromBlock,
         toBlock: "latest",
       })
       .catch(() => [] as never[]),
