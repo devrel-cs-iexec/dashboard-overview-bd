@@ -1,6 +1,6 @@
 import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
-import { scanRoles } from "@/lib/subgraph";
+import { scanRolesByAddress } from "@/lib/subgraph";
 import { loadTvsEvents } from "@/lib/tvs";
 import { getPrices } from "@/lib/price";
 import { relativeTime, shortAddress, formatTokenAmount, formatUsd, explorerTx, explorerAddress } from "@/lib/format";
@@ -17,19 +17,15 @@ export default async function AddressPage({
   const prices = await getPrices().catch(() => null);
   const address = addr?.trim().toLowerCase();
 
-  let roles: Awaited<ReturnType<typeof scanRoles>> = [];
+  let roles: Awaited<ReturnType<typeof scanRolesByAddress>> = [];
   let tvsEvents: Awaited<ReturnType<typeof loadTvsEvents>>["events"] = [];
 
   if (address) {
-    const [rolesAll, tvsPayload] = await Promise.all([
-      scanRoles({ pageSize: 1000, maxPages: 10 }),
+    const [rolesResult, tvsPayload] = await Promise.all([
+      scanRolesByAddress(address),
       loadTvsEvents(),
     ]);
-    roles = rolesAll.filter(
-      (r) =>
-        r.account.toLowerCase() === address ||
-        r.grantedBy.toLowerCase() === address,
-    );
+    roles = rolesResult;
     tvsEvents = tvsPayload.events.filter(
       (e) => e.account.toLowerCase() === address,
     );

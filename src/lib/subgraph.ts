@@ -259,6 +259,69 @@ export async function scanRoles(opts: {
   return out;
 }
 
+// ── scanRolesByAddress ────────────────────────────────────────────────────────
+
+const GRANTS_BY_ACCOUNT_QUERY = gql`
+  query GrantsByAccount($address: String!, $limit: Int!) {
+    aclGrants(
+      where: { account: $address }
+      orderBy: "timestamp"
+      orderDirection: "desc"
+      limit: $limit
+    ) {
+      items {
+        id
+        account
+        role
+        grantedBy
+        timestamp
+        transactionHash
+        chainId
+      }
+    }
+  }
+`;
+
+const GRANTS_BY_GRANTOR_QUERY = gql`
+  query GrantsByGrantor($address: String!, $limit: Int!) {
+    aclGrants(
+      where: { grantedBy: $address }
+      orderBy: "timestamp"
+      orderDirection: "desc"
+      limit: $limit
+    ) {
+      items {
+        id
+        account
+        role
+        grantedBy
+        timestamp
+        transactionHash
+        chainId
+      }
+    }
+  }
+`;
+
+export async function scanRolesByAddress(address: string): Promise<HandleRoleRow[]> {
+  const addr = address.toLowerCase();
+  try {
+    type R = { aclGrants: { items: PonderGrant[] } };
+    const [asAccount, asGrantor] = await Promise.all([
+      client.request<R>(GRANTS_BY_ACCOUNT_QUERY, { address: addr, limit: 500 }),
+      client.request<R>(GRANTS_BY_GRANTOR_QUERY, { address: addr, limit: 500 }),
+    ]);
+    const seen = new Set<string>();
+    const merged: HandleRoleRow[] = [];
+    for (const g of [...asAccount.aclGrants.items, ...asGrantor.aclGrants.items]) {
+      if (!seen.has(g.id)) { seen.add(g.id); merged.push(toRoleRow(g)); }
+    }
+    return merged.sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp));
+  } catch {
+    return [];
+  }
+}
+
 // ── getHandlesByTx ────────────────────────────────────────────────────────────
 
 const HANDLES_BY_TX_QUERY = gql`
