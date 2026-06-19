@@ -16,7 +16,7 @@ export function HeroLanding({
             <span className="font-mono uppercase tracking-[0.18em]">
               {subgraphBlock
                 ? `Live · block #${subgraphBlock.toLocaleString()}`
-                : "Live · Arbitrum Sepolia"}
+                : "Live · ARB + ETH Sepolia"}
             </span>
           </div>
         </Reveal>

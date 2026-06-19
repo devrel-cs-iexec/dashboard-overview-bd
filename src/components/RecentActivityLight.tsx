@@ -1,5 +1,7 @@
 import { loadTvsEvents } from "@/lib/tvs";
 import {
+  explorerAddress,
+  explorerTx,
   formatTokenAmount,
   formatUsd,
   relativeTime,
@@ -60,7 +62,7 @@ export async function RecentActivityLight() {
                 className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-5 py-3 transition-colors hover:bg-[var(--color-page-3)] sm:grid-cols-[1fr_2fr_auto_auto] sm:px-7"
               >
                 <a
-                  href={`https://sepolia.arbiscan.io/address/${e.account}`}
+                  href={explorerAddress(e.chainId, e.account)}
                   target="_blank"
                   rel="noreferrer"
                   className="font-mono text-[12px] text-[var(--color-page-fg)] hover:text-[var(--color-lavender)]"
@@ -90,7 +92,7 @@ export async function RecentActivityLight() {
                   {e.timestamp ? relativeTime(e.timestamp) : "—"}
                 </span>
                 <a
-                  href={`https://sepolia.arbiscan.io/tx/${e.transactionHash}`}
+                  href={explorerTx(e.chainId, e.transactionHash)}
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-md border border-[var(--color-page-border)] px-2 py-0.5 text-right font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-page-muted)] transition-colors hover:border-[var(--color-page-border-strong)] hover:text-[var(--color-page-fg)]"
