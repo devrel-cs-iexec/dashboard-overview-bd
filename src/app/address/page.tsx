@@ -3,7 +3,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { scanRoles } from "@/lib/subgraph";
 import { loadTvsEvents } from "@/lib/tvs";
 import { getPrices } from "@/lib/price";
-import { relativeTime, shortAddress, formatTokenAmount, formatUsd } from "@/lib/format";
+import { relativeTime, shortAddress, formatTokenAmount, formatUsd, explorerTx, explorerAddress } from "@/lib/format";
+import { ChainBadge } from "@/components/ChainBadge";
 
 export const revalidate = 0;
 
@@ -88,6 +89,7 @@ export default async function AddressPage({
                       <thead>
                         <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">Account</th>
+                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">Role</th>
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">Granted By</th>
                           <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Time</th>
@@ -97,7 +99,10 @@ export default async function AddressPage({
                         {roles.map((r) => (
                           <tr key={r.id} className="border-b border-[var(--color-border)]/60 last:border-0 hover:bg-white/[0.02]">
                             <td className="px-5 py-3 font-mono text-[12px] sm:px-7">
-                              <a href={`/address?addr=${r.account}`} className="text-[var(--color-foreground)]/85 hover:text-[var(--color-accent)]">{shortAddress(r.account)}</a>
+                              <a href={explorerAddress(r.chainId, r.account)} target="_blank" rel="noreferrer" className="text-[var(--color-foreground)]/85 hover:text-[var(--color-accent)]">{shortAddress(r.account)}</a>
+                            </td>
+                            <td className="px-5 py-3 sm:px-7">
+                              <ChainBadge chainId={r.chainId} />
                             </td>
                             <td className="px-5 py-3 sm:px-7">
                               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] ${r.role === "ADMIN" ? "border-amber-500/30 bg-amber-500/10 text-amber-300" : "border-[#38bdf8]/30 bg-[#38bdf8]/10 text-[#38bdf8]"}`}>
@@ -127,6 +132,7 @@ export default async function AddressPage({
                       <thead>
                         <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">Direction</th>
+                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">Amount</th>
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">Token</th>
                           <th className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
@@ -141,6 +147,9 @@ export default async function AddressPage({
                                 {e.direction}
                               </span>
                             </td>
+                            <td className="px-5 py-3 sm:px-7">
+                              <ChainBadge chainId={e.chainId} />
+                            </td>
                             <td className="px-5 py-3 font-mono text-[12px] sm:px-7">
                               <div>{formatTokenAmount(e.amount, e.decimals, 2)} {e.symbol}</div>
                               <div className="text-[11px] text-[var(--color-muted)]">{formatUsd(e.amountUsd)}</div>
@@ -150,7 +159,7 @@ export default async function AddressPage({
                               {e.timestamp ? relativeTime(e.timestamp) : "—"}
                             </td>
                             <td className="px-5 py-3 text-right sm:px-7">
-                              <a href={`https://sepolia.arbiscan.io/tx/${e.transactionHash}`} target="_blank" rel="noreferrer" className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]">
+                              <a href={explorerTx(e.chainId, e.transactionHash)} target="_blank" rel="noreferrer" className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]">
                                 {shortAddress(e.transactionHash)} ↗
                               </a>
                             </td>
