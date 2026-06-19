@@ -413,11 +413,12 @@ export async function getHandlesByTimestampRange(
   gte: number,
   lt: number,
   limit = 500,
+  chainId = ARB_SEPOLIA,
 ): Promise<HandleRow[]> {
   try {
     const res = await client.request<{ fheHandles: { items: PonderHandle[] } }>(
       HANDLES_BY_TS_QUERY,
-      { chainId: ARB_SEPOLIA, gte: String(gte), lt: String(lt), limit },
+      { chainId, gte: String(gte), lt: String(lt), limit },
     );
     return res.fheHandles.items.map(toHandleRow);
   } catch {

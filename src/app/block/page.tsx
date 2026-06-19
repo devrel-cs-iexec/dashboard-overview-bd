@@ -2,7 +2,7 @@ import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
 import { getHandlesByTimestampRange } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
-import { publicClient } from "@/lib/viem";
+import { publicClient, ethSepoliaClient } from "@/lib/viem";
 import { opCategory } from "@/lib/nox";
 import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
 
@@ -20,11 +20,14 @@ const CAT_COLOR: Record<string, string> = {
 export default async function BlockPage({
   searchParams,
 }: {
-  searchParams: Promise<{ n?: string }>;
+  searchParams: Promise<{ n?: string; chain?: string }>;
 }) {
-  const { n } = await searchParams;
+  const { n, chain: chainParam } = await searchParams;
   const prices = await getPrices().catch(() => null);
   const blockNum = n ? parseInt(n, 10) : null;
+  const isEth = chainParam === "eth";
+  const chainId = isEth ? 11155111 : 421614;
+  const rpcClient = isEth ? ethSepoliaClient : publicClient;
 
   let handles: Awaited<ReturnType<typeof getHandlesByTimestampRange>> = [];
   let blockTs: number | null = null;
@@ -32,11 +35,11 @@ export default async function BlockPage({
 
   if (blockNum !== null && !isNaN(blockNum) && blockNum > 0) {
     try {
-      const block = await publicClient.getBlock({ blockNumber: BigInt(blockNum), includeTransactions: false });
+      const block = await rpcClient.getBlock({ blockNumber: BigInt(blockNum), includeTransactions: false });
       blockTs = Number(block.timestamp);
-      handles = await getHandlesByTimestampRange(blockTs - 1, blockTs + 15, 500);
+      handles = await getHandlesByTimestampRange(blockTs - 1, blockTs + 15, 500, chainId);
     } catch {
-      error = `Block #${blockNum} not found or RPC error.`;
+      error = `Block #${blockNum} not found on ${isEth ? "ETH" : "ARB"} Sepolia or RPC error.`;
     }
   }
 
@@ -56,12 +59,27 @@ export default async function BlockPage({
               Enter a block number to see all handles produced in that block.
             </p>
 
+            <div className="mb-4 flex gap-2">
+              {(["arb", "eth"] as const).map((c) => {
+                const active = (c === "eth") === isEth;
+                return (
+                  <a
+                    key={c}
+                    href={n ? `/block?chain=${c}&n=${n}` : `/block?chain=${c}`}
+                    className={`rounded-xl px-4 py-2 font-mono text-[12px] uppercase tracking-[0.14em] transition-colors ${active ? (c === "eth" ? "border border-purple-500/40 bg-purple-500/15 text-purple-300" : "border border-blue-500/40 bg-blue-500/15 text-blue-300") : "border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 text-[var(--color-muted)] hover:text-white"}`}
+                  >
+                    {c === "eth" ? "ETH Sepolia" : "ARB Sepolia"}
+                  </a>
+                );
+              })}
+            </div>
             <form method="get" className="mb-8 flex gap-2">
+              <input type="hidden" name="chain" value={isEth ? "eth" : "arb"} />
               <input
                 type="number"
                 name="n"
                 defaultValue={n ?? ""}
-                placeholder="Block number, e.g. 277874590"
+                placeholder={isEth ? "ETH Sepolia block, e.g. 11000000" : "ARB Sepolia block, e.g. 277874590"}
                 className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-4 py-3 font-mono text-[14px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)] focus:outline-none"
               />
               <button type="submit" className="btn-yellow rounded-xl px-6 py-3 font-mono text-[13px]">
@@ -80,13 +98,15 @@ export default async function BlockPage({
                 <span>Block #{blockNum!.toLocaleString()}</span>
                 <span className="text-[var(--color-muted-2)]">·</span>
                 <span>{new Date(blockTs * 1000).toLocaleString("en-US", { timeZone: "UTC" })} UTC</span>
+                <span className="text-[var(--color-muted-2)]">·</span>
+                <span className={`font-mono text-[10px] uppercase tracking-[0.12em] ${isEth ? "text-purple-400" : "text-blue-400"}`}>{isEth ? "ETH" : "ARB"} Sepolia</span>
                 <a
-                  href={`https://sepolia.arbiscan.io/block/${blockNum}`}
+                  href={isEth ? `https://sepolia.etherscan.io/block/${blockNum}` : `https://sepolia.arbiscan.io/block/${blockNum}`}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-[var(--color-accent)]"
                 >
-                  View on Arbiscan ↗
+                  View on {isEth ? "Etherscan" : "Arbiscan"} ↗
                 </a>
               </div>
             )}
@@ -155,7 +175,7 @@ export default async function BlockPage({
               <div className="surface-solid rounded-xl p-6">
                 <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-accent)]">How it works</div>
                 <p className="text-[13px] text-[var(--color-muted)]">
-                  Enter any Arbitrum Sepolia block number. The inspector fetches the block timestamp via RPC, then queries the Nox indexer for all handles produced in that timestamp window.
+                  Select a chain (ARB or ETH Sepolia), then enter a block number. The inspector fetches the block timestamp via RPC, then queries the Ponder indexer for all handles produced in that timestamp window on that chain.
                 </p>
               </div>
             )}
