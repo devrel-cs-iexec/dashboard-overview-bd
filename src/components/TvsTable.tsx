@@ -26,7 +26,7 @@ export type TvsEventVM = {
 type Filter = "all" | "shield" | "unshield";
 
 type TokenChip = {
-  /** "all" or the underlying symbol (e.g. "USDC", "RLC") */
+  /** "all" or "{symbol}:{chainId}" (e.g. "USDC:421614") */
   key: string;
   label: string;
   /** background of the round glyph */
@@ -44,17 +44,20 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
   const [page, setPage] = useState(1);
 
   const tokenChips: TokenChip[] = useMemo(() => {
-    const seen = new Map<string, { accent?: string }>();
+    const seen = new Map<string, { accent?: string; chainId: number }>();
     for (const e of events) {
-      if (!seen.has(e.symbol)) seen.set(e.symbol, { accent: e.accent });
+      const key = `${e.symbol}:${e.chainId}`;
+      if (!seen.has(key)) seen.set(key, { accent: e.accent, chainId: e.chainId });
     }
+    const distinctChains = new Set([...seen.values()].map((v) => v.chainId));
+    const multiChain = distinctChains.size > 1;
     return [
       { key: "all", label: "All Tokens" },
-      ...[...seen.entries()].map(([symbol, meta]) => ({
-        key: symbol,
-        label: symbol,
-        accent: meta.accent,
-      })),
+      ...[...seen.entries()].map(([key, meta]) => {
+        const symbol = key.split(":")[0];
+        const chainLabel = meta.chainId === 11155111 ? " ETH" : " ARB";
+        return { key, label: `${symbol}${multiChain ? chainLabel : ""}`, accent: meta.accent };
+      }),
     ];
   }, [events]);
 
@@ -62,7 +65,11 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
     const q = query.trim().toLowerCase();
     return events.filter((e) => {
       if (filter !== "all" && e.direction !== filter) return false;
-      if (token !== "all" && e.symbol !== token) return false;
+      if (token !== "all") {
+        const [sym, cid] = token.split(":");
+        if (e.symbol !== sym) return false;
+        if (cid && e.chainId !== parseInt(cid, 10)) return false;
+      }
       if (!q) return true;
       return (
         e.accountFull.toLowerCase().includes(q) ||
@@ -248,13 +255,14 @@ function TokenChipGlyph({ chip }: { chip: TokenChip }) {
       </span>
     );
   }
+  const symbol = chip.key.split(":")[0];
   return (
     <span
       aria-hidden
       className="grid size-5 place-items-center rounded-full text-[9px] font-bold text-[#0d0d12]"
       style={{ background: chip.accent ?? "var(--color-muted)" }}
     >
-      {chip.glyph ?? chip.label[0]}
+      {chip.glyph ?? symbol[0]}
     </span>
   );
 }
