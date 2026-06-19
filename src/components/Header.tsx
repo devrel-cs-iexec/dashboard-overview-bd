@@ -34,7 +34,7 @@ export function Header({ lagSeconds }: { lagSeconds: number }) {
             }`}
             style={{ background: "currentColor" }}
           />
-          <span className="text-white/80">Arbitrum Sepolia</span>
+          <span className="text-white/80">ARB + ETH Sepolia</span>
         </div>
       </div>
     </header>

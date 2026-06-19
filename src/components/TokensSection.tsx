@@ -1,5 +1,6 @@
-import { formatTokenAmount, formatUsd, shortAddress } from "@/lib/format";
+import { explorerAddress, formatTokenAmount, formatUsd, shortAddress } from "@/lib/format";
 import type { TokenStats } from "@/lib/data";
+import { ChainBadge } from "./ChainBadge";
 import { Reveal } from "./Reveal";
 
 export function TokensSection({ tokens }: { tokens: TokenStats[] }) {
@@ -14,7 +15,7 @@ export function TokensSection({ tokens }: { tokens: TokenStats[] }) {
 
         <div className="mt-12 grid grid-cols-1 gap-5 lg:grid-cols-2">
           {tokens.map((t, i) => (
-            <Reveal key={t.id} delay={0.1 + i * 0.08}>
+            <Reveal key={`${t.id}-${t.chainId}`} delay={0.1 + i * 0.08}>
               <TokenCard token={t} />
             </Reveal>
           ))}
@@ -46,11 +47,12 @@ function TokenCard({ token }: { token: TokenStats }) {
             <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-muted)]">
               ERC-7984
             </span>
+            <ChainBadge chainId={token.chainId} />
           </div>
           <p className="mt-2 text-[14px] text-[var(--color-muted)]">{token.description}</p>
         </div>
         <a
-          href={`https://sepolia.arbiscan.io/address/${token.wrapper}`}
+          href={explorerAddress(token.chainId, token.wrapper)}
           target="_blank"
           rel="noreferrer"
           className="shrink-0 rounded-lg border border-[var(--color-border)] px-2.5 py-1 font-mono text-[11px] text-[var(--color-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-white"

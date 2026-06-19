@@ -83,7 +83,7 @@ export function FooterDark() {
         </div>
 
         <p className="mt-8 text-center font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
-          Built for the iExec ecosystem · Arbitrum Sepolia · pure RPC + subgraph
+          Built for the iExec ecosystem · ARB + ETH Sepolia · RPC + Ponder
         </p>
       </div>
     </footer>
