@@ -77,7 +77,7 @@ export function Sidebar({ rlcPrice, activeKey }: { rlcPrice?: number; activeKey?
         <Spark />
         <div className="mt-3 flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-muted)]">
           <span className="size-1.5 rounded-full bg-[var(--color-positive)] pulse-dot text-[var(--color-positive)]" />
-          Arbitrum Sepolia
+          ARB + ETH Sepolia
         </div>
       </div>
     </aside>

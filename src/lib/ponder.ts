@@ -1,7 +1,6 @@
 import { GraphQLClient, gql } from "graphql-request";
 
 const PONDER_URL = process.env.PONDER_URL ?? "http://localhost:42069/graphql";
-const ARB_SEPOLIA = 421614;
 
 const client = new GraphQLClient(PONDER_URL, {
   fetch: (input, init) =>
@@ -32,13 +31,14 @@ const TOKEN_STATS_QUERY = gql`
 
 export async function getPonderTokenStats(
   address: string,
+  chainId: number,
 ): Promise<PonderTokenStats | null> {
   try {
     const res = await client.request<{
       tokens: { items: PonderTokenStats[] };
     }>(TOKEN_STATS_QUERY, {
       address: address.toLowerCase(),
-      chainId: ARB_SEPOLIA,
+      chainId,
     });
     return res.tokens.items[0] ?? null;
   } catch {

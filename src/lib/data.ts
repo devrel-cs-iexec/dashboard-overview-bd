@@ -167,7 +167,7 @@ async function loadOneTokenStats(
           abi: wrapperAbi,
           functionName: "underlying",
         }) as Promise<`0x${string}`>),
-    getPonderTokenStats(token.wrapper),
+    getPonderTokenStats(token.wrapper, token.chainId),
     client
       .getLogs({
         address: token.wrapper,
