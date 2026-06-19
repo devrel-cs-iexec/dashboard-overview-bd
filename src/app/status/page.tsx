@@ -3,7 +3,7 @@ import { FooterDark } from "@/components/FooterDark";
 import { getMeta } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
 import { publicClient, ethSepoliaClient } from "@/lib/viem";
-import { NOX_COMPUTE, TOKENS, arbitrumSepolia } from "@/lib/nox";
+import { NOX_COMPUTE, TOKENS, arbitrumSepolia, ethereumSepolia } from "@/lib/nox";
 import { relativeTime, shortAddress } from "@/lib/format";
 
 export const revalidate = 30;
@@ -18,6 +18,7 @@ type Check = {
 export default async function StatusPage() {
   const checks = await Promise.all([
     checkRpc(),
+    checkEthRpc(),
     checkSubgraph(),
     checkPrices(),
     ...TOKENS.map((t) => checkWrapper(t.wrapper, t.symbol, t.chainId)),
@@ -178,6 +179,35 @@ async function checkRpc(): Promise<Check> {
     return {
       name: "Arbitrum Sepolia RPC",
       detail: "RPC unreachable — wrapper TVL / wrap-event scan would fail.",
+      status: "down",
+      meta: [{ label: "Error", value: errorMessage(e) }],
+    };
+  }
+}
+
+async function checkEthRpc(): Promise<Check> {
+  const t0 = Date.now();
+  try {
+    const [chainId, blockNumber] = await Promise.all([
+      ethSepoliaClient.getChainId(),
+      ethSepoliaClient.getBlockNumber(),
+    ]);
+    const ms = Date.now() - t0;
+    return {
+      name: "Ethereum Sepolia RPC",
+      detail: "Tenderly authenticated endpoint — ETH Sepolia wrapper TVL scans and block timestamps.",
+      status: chainId === ethereumSepolia.id ? (ms < 1500 ? "ok" : "warn") : "down",
+      meta: [
+        { label: "Chain", value: String(chainId) },
+        { label: "Head block", value: blockNumber.toLocaleString() },
+        { label: "Round-trip", value: `${ms} ms` },
+        { label: "Endpoint", value: "sepolia.gateway.tenderly.co" },
+      ],
+    };
+  } catch (e) {
+    return {
+      name: "Ethereum Sepolia RPC",
+      detail: "RPC unreachable — ETH Sepolia wrapper scans would fail.",
       status: "down",
       meta: [{ label: "Error", value: errorMessage(e) }],
     };
