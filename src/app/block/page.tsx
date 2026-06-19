@@ -4,7 +4,7 @@ import { getHandlesByTimestampRange } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
 import { publicClient, ethSepoliaClient } from "@/lib/viem";
 import { opCategory } from "@/lib/nox";
-import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
+import { explorerBlock, relativeTime, shortAddress, explorerTx } from "@/lib/format";
 
 export const revalidate = 0;
 
@@ -101,7 +101,7 @@ export default async function BlockPage({
                 <span className="text-[var(--color-muted-2)]">·</span>
                 <span className={`font-mono text-[10px] uppercase tracking-[0.12em] ${isEth ? "text-purple-400" : "text-blue-400"}`}>{isEth ? "ETH" : "ARB"} Sepolia</span>
                 <a
-                  href={isEth ? `https://sepolia.etherscan.io/block/${blockNum}` : `https://sepolia.arbiscan.io/block/${blockNum}`}
+                  href={explorerBlock(chainId, blockNum!)}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-[var(--color-accent)]"

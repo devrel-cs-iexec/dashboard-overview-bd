@@ -45,6 +45,13 @@ export function explorerAddress(chainId: number, address: string): string {
     : `https://sepolia.etherscan.io/address/${address}`;
 }
 
+export function explorerBlock(chainId: number, blockNumber: number | bigint): string {
+  const n = typeof blockNumber === "bigint" ? blockNumber.toString() : blockNumber;
+  return chainId === 421614
+    ? `https://sepolia.arbiscan.io/block/${n}`
+    : `https://sepolia.etherscan.io/block/${n}`;
+}
+
 export function shortAddress(address: string): string {
   if (!address?.startsWith("0x") || address.length < 12) return address;
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
