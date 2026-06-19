@@ -61,14 +61,19 @@ export async function RecentActivityLight() {
                 key={e.id}
                 className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-5 py-3 transition-colors hover:bg-[var(--color-page-3)] sm:grid-cols-[1fr_2fr_auto_auto] sm:px-7"
               >
-                <a
-                  href={explorerAddress(e.chainId, e.account)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-mono text-[12px] text-[var(--color-page-fg)] hover:text-[var(--color-lavender)]"
-                >
-                  {shortAddress(e.account)}
-                </a>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={explorerAddress(e.chainId, e.account)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-[12px] text-[var(--color-page-fg)] hover:text-[var(--color-lavender)]"
+                  >
+                    {shortAddress(e.account)}
+                  </a>
+                  <span className={`hidden rounded px-1 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] sm:inline-flex ${e.chainId === 11155111 ? "border border-purple-500/30 bg-purple-500/10 text-purple-400" : "border border-blue-500/30 bg-blue-500/10 text-blue-400"}`}>
+                    {e.chainId === 11155111 ? "ETH" : "ARB"}
+                  </span>
+                </div>
                 <span className="hidden text-[12.5px] text-[var(--color-page-fg)]/85 sm:block">
                   <span className="text-[var(--color-page-muted)]">
                     {e.symbol === "USDC" ? "Confidential / Stable" : "Confidential / RLC"}
