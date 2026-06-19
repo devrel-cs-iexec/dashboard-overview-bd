@@ -2,6 +2,7 @@ import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
 import { loadDashboard } from "@/lib/data";
 import { formatUsd } from "@/lib/format";
+import { ChainBadge } from "@/components/ChainBadge";
 
 export const revalidate = 60;
 
@@ -125,12 +126,15 @@ export default async function OpsPage() {
               <div className="grid gap-4 lg:grid-cols-2">
                 {tokens.map((t) => (
                   <div
-                    key={t.id}
+                    key={`${t.id}-${t.chainId}`}
                     className="surface-solid rounded-xl p-5"
                     style={{ borderLeft: `2px solid ${t.accent}` }}
                   >
                     <div className="mb-3 flex items-center justify-between">
-                      <span className="font-display text-[16px] font-medium">{t.symbol}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-[16px] font-medium">{t.symbol}</span>
+                        <ChainBadge chainId={t.chainId} />
+                      </div>
                       <span className="font-mono text-[11px] text-[var(--color-muted)]">{t.holderCount > 0 ? `${t.holderCount} holders` : ""}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
