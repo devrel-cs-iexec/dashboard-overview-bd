@@ -10,22 +10,10 @@ type Entry = {
 
 const ENTRIES: Entry[] = [
   {
-    key: "address",
-    title: "Address Profile",
-    description:
-      "Unified timeline for any wallet: staking, rewards, wrap/unwrap, auctions, verification, Nox compute, decryption, and more — with shareable URLs.",
-  },
-  {
-    key: "operator",
-    title: "Operator Staking",
-    description:
-      "Operator vaults, protocol staking, KMS and coprocessor pools, deposits, withdrawals, and on-chain TVL context.",
-  },
-  {
     key: "tvs",
     title: "TVS Dashboard",
     description:
-      "Total value shielded per token, wrapper events, and the shielding activity that feeds protocol metrics.",
+      "Total value shielded per token across ARB and ETH Sepolia — shield/unshield flows, per-token TVL/TVS, and the merged activity feed.",
     href: "/tvs",
     active: true,
   },
@@ -33,55 +21,89 @@ const ENTRIES: Entry[] = [
     key: "transfers",
     title: "Confidential Transfers",
     description:
-      "On-chain confidential token transfers across supported wrappers — activity indexed for exploration and analytics.",
+      "ERC-7984 token events indexed by Ponder — mints, burns, and encrypted transfers across all supported wrappers.",
+    href: "/transfers",
+    active: true,
   },
   {
     key: "wraps",
     title: "Shield / Unshield",
     description:
-      "Embedded flow to move assets between public balances and confidential (wrapped) balances.",
+      "Per-token breakdown of shielding activity: event counts, USD volumes, and the full merged event table.",
+    href: "/wraps",
+    active: true,
   },
   {
     key: "events",
     title: "Nox Events",
     description:
-      "Nox contract event stream — the raw signals of confidential compute on-chain.",
+      "Every compute operation on-chain — arithmetic, comparisons, token ops, ACL changes — filterable by category.",
+    href: "/events",
+    active: true,
   },
   {
-    key: "user-decrypt",
-    title: "User Decryption",
+    key: "address",
+    title: "Address Profile",
     description:
-      "User-directed decryption on the Nox gateway — requests and results as they appear in the index.",
+      "Enter any wallet to see its ACL grants (ADMIN/VIEWER) and shield/unshield history across all tokens and chains.",
+    href: "/address",
+    active: true,
   },
   {
-    key: "public-decrypt",
+    key: "ops",
+    title: "Operation Stats",
+    description:
+      "Breakdown of all compute operations by category, top operations by count, and per-token holder/TVL metrics.",
+    href: "/ops",
+    active: true,
+  },
+  {
+    key: "acl",
+    title: "ACL Audit",
+    description:
+      "Full on-chain access control log — every address granted ADMIN or VIEWER rights over confidential handles.",
+    href: "/acl",
+    active: true,
+  },
+  {
+    key: "viewers",
     title: "Public Decryption",
     description:
-      "Public decryption pipeline — shared decrypt requests and responses for the community.",
+      "Handles marked publicly decryptable — anyone can request the plaintext value from the KMS for these outputs.",
+    href: "/viewers",
+    active: true,
   },
   {
     key: "search",
     title: "Advanced Search",
     description:
-      "Search handles, ciphertexts, and related metadata when you already know what you are looking for.",
+      "Look up every handle created in a transaction by tx hash, or jump straight to an address profile.",
+    href: "/search",
+    active: true,
   },
   {
     key: "block",
-    title: "Block Share Chart",
+    title: "Block Inspector",
     description:
-      "Network share and block-space style charts derived from indexed activity.",
+      "Enter an ARB Sepolia block number to see every Nox handle produced in that block — with operation type and tx link.",
+    href: "/block",
+    active: true,
   },
   {
     key: "verify",
     title: "Input Verification",
     description:
-      "Input verification events — proofs and checks that gate confidential workflows.",
+      "Paste a bytes32 handle ID to confirm it exists on-chain, see which operation produced it, and check decryptability.",
+    href: "/verify",
+    active: true,
   },
   {
-    key: "commits",
-    title: "Ciphertext Commits",
+    key: "status",
+    title: "System Status",
     description:
-      "Ciphertext material commits and coprocessor participation — consensus-style visibility into confidential state.",
+      "Live health probe of every dependency — RPC, Ponder indexer, CoinGecko prices, and all wrapper contracts.",
+    href: "/status",
+    active: true,
   },
 ];
 
@@ -95,12 +117,10 @@ export function SidebarGuide() {
               Sidebar guide
             </div>
             <h2 className="font-display mt-3 text-[32px] font-medium leading-[1.08] tracking-[-0.02em] text-[var(--color-page-fg)] sm:text-[40px]">
-              After you click <span className="text-[var(--color-lavender)]">Open Dashboard</span>,
-              the left panel lists these sections.
+              Every section is live — pick where to start.
             </h2>
             <p className="mt-4 max-w-md text-[15px] leading-[1.55] text-[var(--color-page-muted)]">
-              Same names, same routes. Today only the TVS Dashboard is live —
-              everything else lights up as the backend (subgraph + WSS) is wired in.
+              All sections are live. Each dashboard is powered by live RPC and the Ponder indexer — no wallet required.
             </p>
           </div>
 
