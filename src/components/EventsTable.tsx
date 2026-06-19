@@ -31,6 +31,7 @@ const PAGE_SIZE = 25;
 
 export function EventsTable({ rows }: { rows: EventRow[] }) {
   const [cat, setCat] = useState<OpCategory | "other" | "all">("all");
+  const [chain, setChain] = useState<"all" | "arb" | "eth">("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
@@ -38,13 +39,15 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
     const q = query.trim().toLowerCase();
     return rows.filter((r) => {
       if (cat !== "all" && r.category !== cat) return false;
+      if (chain === "arb" && r.chainId !== 421614) return false;
+      if (chain === "eth" && r.chainId !== 11155111) return false;
       if (!q) return true;
       return (
         r.operator.toLowerCase().includes(q) ||
         r.transactionHash.toLowerCase().includes(q)
       );
     });
-  }, [rows, cat, query]);
+  }, [rows, cat, chain, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -53,20 +56,37 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
   return (
     <div className="surface-solid overflow-hidden rounded-2xl">
       <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-        <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => { setCat(c); setPage(1); }}
-              className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
-                cat === c
-                  ? "bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
-                  : "text-[var(--color-muted)] hover:text-white"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c}
+                onClick={() => { setCat(c); setPage(1); }}
+                className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
+                  cat === c
+                    ? "bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
+                    : "text-[var(--color-muted)] hover:text-white"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
+            {(["all", "arb", "eth"] as const).map((c) => (
+              <button
+                key={c}
+                onClick={() => { setChain(c); setPage(1); }}
+                className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
+                  chain === c
+                    ? "bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
+                    : "text-[var(--color-muted)] hover:text-white"
+                }`}
+              >
+                {c === "all" ? "All chains" : c}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
