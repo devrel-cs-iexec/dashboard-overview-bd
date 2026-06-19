@@ -215,6 +215,7 @@ async function checkEthRpc(): Promise<Check> {
 }
 
 async function checkSubgraph(): Promise<Check> {
+  const ponderUrl = process.env.PONDER_URL ?? "http://localhost:42069/graphql";
   const t0 = Date.now();
   try {
     const meta = await getMeta();
@@ -225,22 +226,22 @@ async function checkSubgraph(): Promise<Check> {
     const syncing = meta.block.number === 0;
     return {
       name: "Ponder indexer",
-      detail: "Local Ponder node at localhost:42069. Powers handles, roles, ops breakdown, confidential transfers.",
+      detail: "Ponder GraphQL node — powers handles, roles, ops, confidential transfers.",
       status: syncing ? "warn" : lag !== null && lag > 300 ? "warn" : ms < 2000 ? "ok" : "warn",
       meta: [
         { label: "Head block", value: syncing ? "syncing…" : meta.block.number.toLocaleString() },
         { label: "Indexer lag", value: syncing ? "backfilling" : lag !== null && lag > 0 ? relativeTime(meta.block.timestamp) : "live" },
         { label: "Round-trip", value: `${ms} ms` },
-        { label: "Endpoint", value: "localhost:42069/graphql" },
+        { label: "Endpoint", value: ponderUrl.replace(/^https?:\/\//, "") },
       ],
     };
   } catch (e) {
     return {
       name: "Ponder indexer",
-      detail: "Ponder not running — start with `npm run dev` in the nox-subgraph-ERC repo.",
+      detail: "Ponder not running — start with `npm run start` in the indexer repo.",
       status: "down",
       meta: [
-        { label: "Endpoint", value: "localhost:42069/graphql" },
+        { label: "Endpoint", value: ponderUrl.replace(/^https?:\/\//, "") },
         { label: "Error", value: errorMessage(e) },
       ],
     };
