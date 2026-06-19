@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { explorerAddress, explorerTx } from "@/lib/format";
 import { Reveal } from "./Reveal";
 
 export type TvsEventVM = {
@@ -145,12 +146,12 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
 }
 
 function Row({ e }: { e: TvsEventVM }) {
-  const explorer = e.chainId === 11155111 ? "https://sepolia.etherscan.io" : "https://sepolia.arbiscan.io";
+  const isEth = e.chainId === 11155111;
   return (
     <tr className="border-b border-[var(--color-border)]/60 transition-colors last:border-0 hover:bg-white/[0.02]">
       <td className="px-5 py-3 font-mono text-[12px] text-[var(--color-foreground)]/85 sm:px-7">
         <a
-          href={`${explorer}/address/${e.accountFull}`}
+          href={explorerAddress(e.chainId, e.accountFull)}
           target="_blank"
           rel="noreferrer"
           className="hover:text-[var(--color-accent)]"
@@ -177,6 +178,9 @@ function Row({ e }: { e: TvsEventVM }) {
             {e.confidentialSymbol.replace(/^c/, "")[0]}
           </span>
           <span className="text-[12px] text-[var(--color-foreground)]/85">{e.symbol}</span>
+          <span className={`inline-flex items-center rounded px-1 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] ${isEth ? "border border-purple-500/30 bg-purple-500/10 text-purple-400" : "border border-blue-500/30 bg-blue-500/10 text-blue-400"}`}>
+            {isEth ? "ETH" : "ARB"}
+          </span>
         </div>
       </td>
       <td className="px-5 py-3 text-right sm:px-7">
@@ -189,7 +193,7 @@ function Row({ e }: { e: TvsEventVM }) {
       </td>
       <td className="px-5 py-3 text-right sm:px-7">
         <a
-          href={`${explorer}/tx/${e.txHash}`}
+          href={explorerTx(e.chainId, e.txHash)}
           target="_blank"
           rel="noreferrer"
           className="font-mono text-[12px] text-[var(--color-muted)] transition-colors hover:text-[var(--color-accent)]"
