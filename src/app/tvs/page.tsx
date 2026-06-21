@@ -40,7 +40,7 @@ export default async function TvsPage() {
   return (
     <div className="min-h-screen">
       <TopNav showOpenDashboard={false} />
-      <LiveRefresh />
+      <LiveRefresh intervalMs={60_000} />
       <div className="flex">
         <Sidebar rlcPrice={payload.prices.rlc} activeKey="tvs" />
 
