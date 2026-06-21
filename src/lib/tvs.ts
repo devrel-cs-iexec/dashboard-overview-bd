@@ -51,8 +51,12 @@ function clientForChain(chainId: number): PublicClient {
 export async function loadTvsEvents(): Promise<TvsPayload> {
   const prices = await getPrices();
 
-  const perToken = await Promise.all(
+  const perTokenResults = await Promise.allSettled(
     TOKENS.map((t) => loadOneTokenEvents(t, prices)),
+  );
+
+  const perToken = perTokenResults.map((r) =>
+    r.status === "fulfilled" ? r.value : { events: [] as TvsEvent[], partial: true },
   );
 
   const events = perToken.flatMap((p) => p.events);
@@ -101,6 +105,9 @@ async function loadOneTokenEvents(
       functionName: "underlying",
     })) as `0x${string}`);
 
+  // Resolve latest block once, shared by both queries for this token.
+  const toBlock = await client.getBlockNumber();
+
   // Shield events: ERC-20 Transfer to wrapper (plaintext amount in log)
   // Unshield events: UnwrapFinalized on the wrapper (plaintextAmount field in the event)
   // chunkedGetLogs splits large ranges into 10M-block pages to stay within RPC limits.
@@ -110,13 +117,13 @@ async function loadOneTokenEvents(
       event: erc20TransferEvent,
       args: { to: token.wrapper },
       fromBlock: token.fromBlock,
-      toBlock: "latest",
+      toBlock,
     }),
     chunkedGetLogs(client, {
       address: token.wrapper,
       event: unwrapFinalizedEvent,
       fromBlock: token.fromBlock,
-      toBlock: "latest",
+      toBlock,
     }),
   ]);
 
@@ -192,14 +199,11 @@ const CHUNK_SIZE = 10_000_000n;
 
 async function chunkedGetLogs(
   client: PublicClient,
-  params: { address: `0x${string}`; event: unknown; args?: unknown; fromBlock: bigint; toBlock?: "latest" | bigint },
+  params: { address: `0x${string}`; event: unknown; args?: unknown; fromBlock: bigint; toBlock: bigint },
 ): Promise<Log[]> {
-  const toBlock = params.toBlock === "latest" || params.toBlock === undefined
-    ? await client.getBlockNumber()
-    : params.toBlock;
   const results: Log[] = [];
-  for (let from = params.fromBlock; from <= toBlock; from += CHUNK_SIZE) {
-    const to = from + CHUNK_SIZE - 1n < toBlock ? from + CHUNK_SIZE - 1n : toBlock;
+  for (let from = params.fromBlock; from <= params.toBlock; from += CHUNK_SIZE) {
+    const to = from + CHUNK_SIZE - 1n < params.toBlock ? from + CHUNK_SIZE - 1n : params.toBlock;
     const chunk = await (client.getLogs as (p: unknown) => Promise<Log[]>)({ ...params, fromBlock: from, toBlock: to });
     results.push(...chunk);
   }
