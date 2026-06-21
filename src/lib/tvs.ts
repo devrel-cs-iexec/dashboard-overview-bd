@@ -2,7 +2,7 @@ import { wrapperAbi, erc20TransferEvent, unwrapFinalizedEvent } from "./abi";
 import { TOKENS, type ConfidentialToken } from "./nox";
 import { publicClient, ethSepoliaClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
-import type { PublicClient } from "viem";
+import type { PublicClient, Log } from "viem";
 
 export type TvsEventDirection = "shield" | "unshield";
 
@@ -103,15 +103,16 @@ async function loadOneTokenEvents(
 
   // Shield events: ERC-20 Transfer to wrapper (plaintext amount in log)
   // Unshield events: UnwrapFinalized on the wrapper (plaintextAmount field in the event)
+  // chunkedGetLogs splits large ranges into 10M-block pages to stay within RPC limits.
   const [shieldLogs, unshieldLogs] = await Promise.allSettled([
-    client.getLogs({
+    chunkedGetLogs(client, {
       address: underlying,
       event: erc20TransferEvent,
       args: { to: token.wrapper },
       fromBlock: token.fromBlock,
       toBlock: "latest",
     }),
-    client.getLogs({
+    chunkedGetLogs(client, {
       address: token.wrapper,
       event: unwrapFinalizedEvent,
       fromBlock: token.fromBlock,
@@ -185,6 +186,24 @@ async function loadOneTokenEvents(
   }
 
   return { events, partial };
+}
+
+const CHUNK_SIZE = 10_000_000n;
+
+async function chunkedGetLogs(
+  client: PublicClient,
+  params: { address: `0x${string}`; event: unknown; args?: unknown; fromBlock: bigint; toBlock?: "latest" | bigint },
+): Promise<Log[]> {
+  const toBlock = params.toBlock === "latest" || params.toBlock === undefined
+    ? await client.getBlockNumber()
+    : params.toBlock;
+  const results: Log[] = [];
+  for (let from = params.fromBlock; from <= toBlock; from += CHUNK_SIZE) {
+    const to = from + CHUNK_SIZE - 1n < toBlock ? from + CHUNK_SIZE - 1n : toBlock;
+    const chunk = await (client.getLogs as (p: unknown) => Promise<Log[]>)({ ...params, fromBlock: from, toBlock: to });
+    results.push(...chunk);
+  }
+  return results;
 }
 
 /**
