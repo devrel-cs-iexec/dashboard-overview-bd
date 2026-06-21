@@ -1,4 +1,5 @@
 import { TopNav } from "@/components/TopNav";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { Sidebar } from "@/components/Sidebar";
 import { loadDashboard } from "@/lib/data";
 import { formatUsd } from "@/lib/format";
@@ -32,6 +33,7 @@ export default async function OpsPage() {
   return (
     <div className="min-h-screen">
       <TopNav showOpenDashboard={false} />
+      <LiveRefresh />
       <div className="flex">
         <Sidebar rlcPrice={data.prices.rlc} activeKey="ops" />
         <div className="flex min-w-0 flex-1 flex-col">

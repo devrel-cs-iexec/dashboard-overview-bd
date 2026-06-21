@@ -1,4 +1,5 @@
 import { TopNav } from "@/components/TopNav";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { Sidebar } from "@/components/Sidebar";
 import { TvsTable, type TvsEventVM } from "@/components/TvsTable";
 import { loadTvsEvents } from "@/lib/tvs";
@@ -39,6 +40,7 @@ export default async function WrapsPage() {
   return (
     <div className="min-h-screen">
       <TopNav showOpenDashboard={false} />
+      <LiveRefresh />
       <div className="flex">
         <Sidebar rlcPrice={payload.prices.rlc} activeKey="wraps" />
         <div className="flex min-w-0 flex-1 flex-col">

@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/Sidebar";
 import { TopNav } from "@/components/TopNav";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { TvsTable, type TvsEventVM } from "@/components/TvsTable";
 import { loadTvsEvents } from "@/lib/tvs";
 import {
@@ -39,6 +40,7 @@ export default async function TvsPage() {
   return (
     <div className="min-h-screen">
       <TopNav showOpenDashboard={false} />
+      <LiveRefresh />
       <div className="flex">
         <Sidebar rlcPrice={payload.prices.rlc} activeKey="tvs" />
 

@@ -1,4 +1,5 @@
 import { TopNav } from "@/components/TopNav";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { Sidebar } from "@/components/Sidebar";
 import { EventsTable, type EventRow } from "@/components/EventsTable";
 import { scanHandles } from "@/lib/subgraph";
@@ -23,6 +24,7 @@ export default async function EventsPage() {
   return (
     <div className="min-h-screen">
       <TopNav showOpenDashboard={false} />
+      <LiveRefresh />
       <div className="flex">
         <Sidebar rlcPrice={prices?.rlc} activeKey="events" />
         <div className="flex min-w-0 flex-1 flex-col">

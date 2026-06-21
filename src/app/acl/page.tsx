@@ -1,4 +1,5 @@
 import { TopNav } from "@/components/TopNav";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { Sidebar } from "@/components/Sidebar";
 import { AclTable } from "@/components/AclTable";
 import { scanRoles } from "@/lib/subgraph";
@@ -18,6 +19,7 @@ export default async function AclPage() {
   return (
     <div className="min-h-screen">
       <TopNav showOpenDashboard={false} />
+      <LiveRefresh />
       <div className="flex">
         <Sidebar rlcPrice={prices?.rlc} activeKey="acl" />
         <div className="flex min-w-0 flex-1 flex-col">

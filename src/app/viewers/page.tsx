@@ -1,4 +1,5 @@
 import { TopNav } from "@/components/TopNav";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { Sidebar } from "@/components/Sidebar";
 import { scanHandles } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
@@ -18,6 +19,7 @@ export default async function ViewersPage() {
   return (
     <div className="min-h-screen">
       <TopNav showOpenDashboard={false} />
+      <LiveRefresh />
       <div className="flex">
         <Sidebar rlcPrice={prices?.rlc} activeKey="viewers" />
         <div className="flex min-w-0 flex-1 flex-col">

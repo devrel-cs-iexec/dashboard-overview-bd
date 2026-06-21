@@ -1,4 +1,5 @@
 import { TopNav } from "@/components/TopNav";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { Sidebar } from "@/components/Sidebar";
 import { scanConfidentialTransfers } from "@/lib/ponder";
 import { getPrices } from "@/lib/price";
@@ -33,6 +34,7 @@ export default async function TransfersPage() {
   return (
     <div className="min-h-screen">
       <TopNav showOpenDashboard={false} />
+      <LiveRefresh />
       <div className="flex">
         <Sidebar rlcPrice={prices?.rlc} activeKey="transfers" />
         <div className="flex min-w-0 flex-1 flex-col">
