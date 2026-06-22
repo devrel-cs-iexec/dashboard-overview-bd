@@ -43,12 +43,44 @@ function clientForChain(chainId: number): PublicClient {
   return chainId === 11155111 ? (ethSepoliaClient as unknown as PublicClient) : (publicClient as unknown as PublicClient);
 }
 
+// Module-level stale-while-revalidate cache — survives concurrent requests,
+// prevents RPC hammering, and serves last-known-good data on transient failures.
+const TVS_TTL_MS = 60_000;
+let tvsCache: { ts: number; payload: TvsPayload } | null = null;
+let tvsFlight: Promise<TvsPayload> | null = null;
+
+export async function loadTvsEvents(): Promise<TvsPayload> {
+  // Serve cache if still fresh.
+  if (tvsCache && Date.now() - tvsCache.ts < TVS_TTL_MS) return tvsCache.payload;
+
+  // Coalesce concurrent requests into one in-flight fetch.
+  if (tvsFlight) return tvsFlight;
+
+  tvsFlight = loadTvsEventsRaw().then((payload) => {
+    tvsFlight = null;
+    // Only promote to cache if we got real data.
+    if (!payload.partial || payload.events.length > 0) {
+      tvsCache = { ts: Date.now(), payload };
+    }
+    // Fall back to stale cache on total failure rather than showing 0 events.
+    return (payload.partial && payload.events.length === 0 && tvsCache)
+      ? tvsCache.payload
+      : payload;
+  }).catch((err) => {
+    tvsFlight = null;
+    if (tvsCache) return tvsCache.payload;
+    throw err;
+  });
+
+  return tvsFlight;
+}
+
 /**
  * Pull wrap (ERC-20 Transfer to wrapper) + unwrap (UnwrapFinalized) events for
  * every supported token, decorate with timestamps via batched getBlock calls,
  * and merge into a single newest-first timeline.
  */
-export async function loadTvsEvents(): Promise<TvsPayload> {
+async function loadTvsEventsRaw(): Promise<TvsPayload> {
   const prices = await getPrices();
 
   const perTokenResults = await Promise.allSettled(
