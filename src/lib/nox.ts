@@ -122,3 +122,27 @@ export function opCategory(op: string): OpCategory | "other" {
   }
   return "other";
 }
+
+/** Display label per operation category. */
+export const CAT_LABEL: Record<string, string> = {
+  arithmetic: "Arithmetic",
+  comparison: "Comparison",
+  token: "Token ops",
+  control: "Control flow",
+  acl: "ACL",
+  other: "Other",
+};
+
+/**
+ * Accent per operation category. Plain hex rather than CSS vars: several call
+ * sites append an alpha suffix (`${CAT_COLOR[c]}40`), which only works on a
+ * literal hex value.
+ */
+export const CAT_COLOR: Record<string, string> = {
+  arithmetic: "#fcd15a",
+  comparison: "#a78bfa",
+  token: "#2fbf7f",
+  control: "#fb923c",
+  acl: "#38bdf8",
+  other: "#8b8b96",
+};

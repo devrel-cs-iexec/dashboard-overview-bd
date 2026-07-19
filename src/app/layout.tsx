@@ -1,6 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Anybody, Mulish } from "next/font/google";
 import "./globals.css";
+import { TopNav } from "@/components/TopNav";
+import { Sidebar } from "@/components/Sidebar";
+import { MobileNav } from "@/components/MobileNav";
+import { LiveRefresh } from "@/components/LiveRefresh";
+import { getPrices } from "@/lib/price";
 
 const mulish = Mulish({
   variable: "--font-sans",
@@ -35,20 +40,34 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0d0d12",
+  themeColor: "#1d1d24",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Fetched once for the whole shell rather than in each of the twelve pages.
+  const prices = await getPrices().catch(() => null);
+
   return (
     <html
       lang="en"
       className={`${mulish.variable} ${geistMono.variable} ${anybody.variable}`}
     >
-      <body className="antialiased min-h-screen">{children}</body>
+      <body className="antialiased min-h-screen">
+        <a href="#content" className="skip-link">
+          Skip to content
+        </a>
+        <TopNav />
+        <LiveRefresh />
+        <MobileNav />
+        <div className="flex">
+          <Sidebar rlcPrice={prices?.rlc} />
+          <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+        </div>
+      </body>
     </html>
   );
 }

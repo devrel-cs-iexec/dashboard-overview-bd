@@ -1,20 +1,11 @@
-import { TopNav } from "@/components/TopNav";
-import { Sidebar } from "@/components/Sidebar";
+import { PageHeader } from "@/components/PageHeader";
+import { SearchForm } from "@/components/SearchForm";
 import { getHandleById } from "@/lib/subgraph";
-import { getPrices } from "@/lib/price";
-import { opCategory } from "@/lib/nox";
+import { opCategory, CAT_COLOR } from "@/lib/nox";
 import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
 
+export const metadata = { title: "Input Verification" };
 export const revalidate = 0;
-
-const CAT_COLOR: Record<string, string> = {
-  arithmetic: "var(--color-accent)",
-  comparison: "#a78bfa",
-  token: "var(--color-positive)",
-  control: "#fb923c",
-  acl: "#38bdf8",
-  other: "var(--color-muted)",
-};
 
 export default async function VerifyPage({
   searchParams,
@@ -22,7 +13,6 @@ export default async function VerifyPage({
   searchParams: Promise<{ id?: string }>;
 }) {
   const { id } = await searchParams;
-  const prices = await getPrices().catch(() => null);
   const handleId = id?.trim();
 
   let handle: Awaited<ReturnType<typeof getHandleById>> = null;
@@ -34,33 +24,21 @@ export default async function VerifyPage({
   }
 
   return (
-    <div className="min-h-screen">
-      <TopNav />
-      <div className="flex">
-        <Sidebar rlcPrice={prices?.rlc} activeKey="verify" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/40 px-6 py-4 backdrop-blur lg:px-10">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted-2)]">Search</div>
-            <h1 className="font-display mt-1 text-[22px] font-medium tracking-tight">Input Verification</h1>
-          </div>
+    <>
+      <PageHeader kicker="Search" title="Input Verification" />
 
-          <main className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
-            <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
-              Verify that a given handle exists on-chain. Paste the bytes32 handle ID to confirm its operation type, timestamp, and public decryptability status.
-            </p>
+      <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
+        <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
+          Verify that a given handle exists on-chain. Paste the bytes32 handle ID to confirm its operation type, timestamp, and public decryptability status.
+        </p>
 
-            <form method="get" className="mb-8 flex gap-2">
-              <input
-                type="text"
-                name="id"
-                defaultValue={handleId ?? ""}
-                placeholder="0x… handle ID (bytes32, 66 chars)"
-                className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-4 py-3 font-mono text-[14px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)] focus:outline-none"
-              />
-              <button type="submit" className="btn-yellow rounded-xl px-6 py-3 font-mono text-[13px]">
-                Verify
-              </button>
-            </form>
+        <SearchForm
+          name="id"
+          label="Handle ID (bytes32)"
+          placeholder="0x… handle ID (bytes32, 66 chars)"
+          defaultValue={handleId}
+          submitLabel="Verify"
+        />
 
             {handleId && (!handleId.startsWith("0x") || handleId.length !== 66) && (
               <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-mono text-[13px] text-amber-300">
@@ -152,9 +130,7 @@ export default async function VerifyPage({
                 </div>
               </div>
             )}
-          </main>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

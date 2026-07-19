@@ -1,28 +1,12 @@
-import { TopNav } from "@/components/TopNav";
-import { LiveRefresh } from "@/components/LiveRefresh";
-import { Sidebar } from "@/components/Sidebar";
+import { PageHeader, LivePill } from "@/components/PageHeader";
+import { StatTiles } from "@/components/StatTiles";
 import { loadDashboard } from "@/lib/data";
 import { formatUsd } from "@/lib/format";
+import { CAT_COLOR, CAT_LABEL } from "@/lib/nox";
 import { ChainBadge } from "@/components/ChainBadge";
 
+export const metadata = { title: "Operation Stats" };
 export const revalidate = 60;
-
-const CAT_LABEL: Record<string, string> = {
-  arithmetic: "Arithmetic",
-  comparison: "Comparison",
-  token: "Token ops",
-  control: "Control flow",
-  acl: "ACL",
-  other: "Other",
-};
-const CAT_COLOR: Record<string, string> = {
-  arithmetic: "var(--color-accent)",
-  comparison: "#a78bfa",
-  token: "var(--color-positive)",
-  control: "#fb923c",
-  acl: "#38bdf8",
-  other: "var(--color-muted)",
-};
 
 export default async function OpsPage() {
   const data = await loadDashboard();
@@ -31,39 +15,20 @@ export default async function OpsPage() {
   const totalOps = Object.values(ops).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="min-h-screen">
-      <TopNav />
-      <LiveRefresh />
-      <div className="flex">
-        <Sidebar rlcPrice={data.prices.rlc} activeKey="ops" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)]/40 px-6 py-4 backdrop-blur lg:px-10">
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted-2)]">Compute</div>
-              <h1 className="font-display mt-1 text-[22px] font-medium tracking-tight">Operation Stats</h1>
-            </div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
-              <span className="pulse-dot inline-block size-1.5 rounded-full bg-[var(--color-positive)]" />
-              Live · ISR 60s
-            </span>
-          </div>
+    <>
+      <PageHeader kicker="Compute" title="Operation Stats">
+        <LivePill />
+      </PageHeader>
 
-          <main className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
-            {/* Stat tiles */}
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-border)] lg:grid-cols-4">
-              {[
-                { label: "Total handles", value: totals.handles.toLocaleString(), sub: "all-time" },
-                { label: "Last 24h", value: totals.handlesLast24h.toLocaleString(), sub: "new handles" },
-                { label: "Last 7d", value: totals.handlesLast7d.toLocaleString(), sub: "new handles" },
-                { label: "Distinct operators", value: totals.distinctOperators.toLocaleString(), sub: "unique op types" },
-              ].map((t) => (
-                <div key={t.label} className="bg-[var(--color-surface)] p-5 lg:p-6">
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">{t.label}</div>
-                  <div className="display-num font-display mt-3 text-3xl font-medium leading-none text-[var(--color-accent)] lg:text-4xl">{t.value}</div>
-                  <div className="mt-2 font-mono text-[11px] text-[var(--color-muted)]">{t.sub}</div>
-                </div>
-              ))}
-            </div>
+      <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
+        <StatTiles
+          stats={[
+            { label: "Total handles", value: totals.handles.toLocaleString(), sub: "all-time", color: "var(--color-accent)" },
+            { label: "Last 24h", value: totals.handlesLast24h.toLocaleString(), sub: "new handles", color: "var(--color-accent)" },
+            { label: "Last 7d", value: totals.handlesLast7d.toLocaleString(), sub: "new handles", color: "var(--color-accent)" },
+            { label: "Distinct operators", value: totals.distinctOperators.toLocaleString(), sub: "unique op types", color: "var(--color-accent)" },
+          ]}
+        />
 
             <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
               {/* Ops breakdown */}
@@ -156,9 +121,7 @@ export default async function OpsPage() {
                 ))}
               </div>
             </div>
-          </main>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

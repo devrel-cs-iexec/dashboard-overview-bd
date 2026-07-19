@@ -1,21 +1,11 @@
-import { TopNav } from "@/components/TopNav";
-import { Sidebar } from "@/components/Sidebar";
+import { PageHeader } from "@/components/PageHeader";
 import { getHandlesByTimestampRange } from "@/lib/subgraph";
-import { getPrices } from "@/lib/price";
 import { publicClient, ethSepoliaClient } from "@/lib/viem";
-import { opCategory } from "@/lib/nox";
-import { explorerBlock, relativeTime, shortAddress, explorerTx } from "@/lib/format";
+import { opCategory, CAT_COLOR } from "@/lib/nox";
+import { explorerBlock, shortAddress, explorerTx } from "@/lib/format";
 
+export const metadata = { title: "Block Inspector" };
 export const revalidate = 0;
-
-const CAT_COLOR: Record<string, string> = {
-  arithmetic: "var(--color-accent)",
-  comparison: "#a78bfa",
-  token: "var(--color-positive)",
-  control: "#fb923c",
-  acl: "#38bdf8",
-  other: "var(--color-muted)",
-};
 
 export default async function BlockPage({
   searchParams,
@@ -23,7 +13,6 @@ export default async function BlockPage({
   searchParams: Promise<{ n?: string; chain?: string }>;
 }) {
   const { n, chain: chainParam } = await searchParams;
-  const prices = await getPrices().catch(() => null);
   const blockNum = n ? parseInt(n, 10) : null;
   const isEth = chainParam === "eth";
   const chainId = isEth ? 11155111 : 421614;
@@ -44,20 +33,13 @@ export default async function BlockPage({
   }
 
   return (
-    <div className="min-h-screen">
-      <TopNav />
-      <div className="flex">
-        <Sidebar rlcPrice={prices?.rlc} activeKey="block" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/40 px-6 py-4 backdrop-blur lg:px-10">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted-2)]">Search</div>
-            <h1 className="font-display mt-1 text-[22px] font-medium tracking-tight">Block Inspector</h1>
-          </div>
+    <>
+      <PageHeader kicker="Search" title="Block Inspector" />
 
-          <main className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
-            <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
-              Enter a block number to see all handles produced in that block.
-            </p>
+      <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
+        <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
+          Enter a block number to see all handles produced in that block.
+        </p>
 
             <div className="mb-4 flex gap-2">
               {(["arb", "eth"] as const).map((c) => {
@@ -73,14 +55,18 @@ export default async function BlockPage({
                 );
               })}
             </div>
-            <form method="get" className="mb-8 flex gap-2">
+            <form method="get" className="mb-8 flex flex-wrap items-center gap-2">
               <input type="hidden" name="chain" value={isEth ? "eth" : "arb"} />
+              <label htmlFor="block-number" className="visually-hidden">
+                Block number
+              </label>
               <input
+                id="block-number"
                 type="number"
                 name="n"
                 defaultValue={n ?? ""}
                 placeholder={isEth ? "ETH Sepolia block, e.g. 11000000" : "ARB Sepolia block, e.g. 277874590"}
-                className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-4 py-3 font-mono text-[14px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)] focus:outline-none"
+                className="min-w-0 flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-4 py-3 font-mono text-[14px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)]"
               />
               <button type="submit" className="btn-yellow rounded-xl px-6 py-3 font-mono text-[13px]">
                 Inspect
@@ -179,9 +165,7 @@ export default async function BlockPage({
                 </p>
               </div>
             )}
-          </main>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

@@ -1,12 +1,15 @@
-import { TopNav } from "@/components/TopNav";
-import { FooterDark } from "@/components/FooterDark";
+import { PageHeader } from "@/components/PageHeader";
 import { getMeta } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
 import { publicClient, ethSepoliaClient } from "@/lib/viem";
 import { NOX_COMPUTE, TOKENS, arbitrumSepolia, ethereumSepolia } from "@/lib/nox";
 import { relativeTime, shortAddress } from "@/lib/format";
 
-export const revalidate = 30;
+export const metadata = { title: "System Status" };
+
+// Every probe must reflect the state right now, so this page opts out of the
+// route cache entirely — matching what the page copy promises.
+export const revalidate = 0;
 
 type Check = {
   name: string;
@@ -34,65 +37,57 @@ export default async function StatusPage() {
       : "ok";
 
   return (
-    <main className="relative flex min-h-screen flex-col bg-[var(--color-page)] text-[var(--color-page-fg)]">
-      <TopNav variant="transparent" />
+    <>
+      <PageHeader kicker="System" title="System Status">
+        <OverallPill status={overall} ratio={`${okCount}/${total}`} />
+      </PageHeader>
 
-      <section className="mx-auto w-full max-w-7xl px-6 pt-12 pb-6 lg:px-10 lg:pt-20 lg:pb-10">
-        <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-lavender)]">
-          System status
-        </div>
-        <div className="mt-3 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <h1 className="font-display max-w-3xl text-[36px] font-medium leading-[1.05] tracking-[-0.02em] sm:text-[44px]">
-            {overall === "ok"
-              ? "All systems operational."
-              : overall === "warn"
+      <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
+        <h2 className="font-display max-w-3xl text-[26px] font-medium leading-[1.15] tracking-[-0.02em] sm:text-[32px]">
+          {overall === "ok"
+            ? "All systems operational."
+            : overall === "warn"
               ? "Partial degradation — some endpoints are slow."
               : "Service disruption — at least one dependency is down."}
-          </h1>
-          <OverallPill status={overall} ratio={`${okCount}/${total}`} />
-        </div>
-        <p className="mt-4 max-w-2xl text-[15px] leading-[1.55] text-[var(--color-page-muted)]">
+        </h2>
+        <p className="mt-3 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
           Real-time health probe of every dependency that powers Nox·Stats. Each
           check runs server-side on every request — no cache — so what you see
           is what answered just now.
         </p>
-      </section>
 
-      <section className="mx-auto w-full max-w-7xl px-6 pb-20 lg:px-10 lg:pb-28">
-        <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ul className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
           {checks.map((c) => (
             <li key={c.name}>
               <CheckCard check={c} />
             </li>
           ))}
         </ul>
-      </section>
-
-      <FooterDark />
-    </main>
+      </main>
+    </>
   );
 }
 
 function CheckCard({ check }: { check: Check }) {
   return (
-    <article className="card-light p-5">
+    <article className="surface-solid h-full rounded-2xl p-5">
       <header className="flex items-start justify-between gap-3">
         <h3 className="font-display text-[16px] font-semibold tracking-tight">
           {check.name}
         </h3>
         <StatusBadge status={check.status} />
       </header>
-      <p className="mt-2 text-[13px] leading-[1.55] text-[var(--color-page-muted)]">
+      <p className="mt-2 text-[13px] leading-[1.55] text-[var(--color-muted)]">
         {check.detail}
       </p>
       {check.meta && check.meta.length > 0 ? (
-        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-[var(--color-page-border)] pt-3 text-[12px]">
+        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-[var(--color-border)] pt-3 text-[12px]">
           {check.meta.map((m) => (
             <div key={m.label} className="flex flex-col">
-              <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-page-muted)]">
+              <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-muted-2)]">
                 {m.label}
               </dt>
-              <dd className="font-mono text-[12px] text-[var(--color-page-fg)]">
+              <dd className="font-mono text-[12px] text-[var(--color-foreground)]">
                 {m.value}
               </dd>
             </div>
@@ -108,20 +103,20 @@ function StatusBadge({ status }: { status: Check["status"] }) {
     ok: {
       label: "Operational",
       dot: "var(--color-positive)",
-      text: "#178255",
-      bg: "rgba(47, 191, 127, 0.12)",
+      text: "#6fe0ac",
+      bg: "rgba(47, 191, 127, 0.14)",
     },
     warn: {
       label: "Degraded",
       dot: "#e1a32a",
-      text: "#a3700b",
-      bg: "rgba(225, 163, 42, 0.12)",
+      text: "#f0c063",
+      bg: "rgba(225, 163, 42, 0.14)",
     },
     down: {
       label: "Down",
       dot: "var(--color-negative)",
-      text: "#a83434",
-      bg: "rgba(255, 125, 125, 0.12)",
+      text: "#ffa9a9",
+      bg: "rgba(255, 125, 125, 0.14)",
     },
   };
   const v = map[status];
@@ -144,9 +139,9 @@ function OverallPill({ status, ratio }: { status: Check["status"]; ratio: string
       ? "#e1a32a"
       : "var(--color-negative)";
   return (
-    <div className="inline-flex items-center gap-3 rounded-full border border-[var(--color-page-border)] bg-[var(--color-page-2)] px-4 py-2">
-      <span className="pulse-dot inline-block size-2 rounded-full" style={{ background: tint, color: tint }} />
-      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-page-fg)]">
+    <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1">
+      <span aria-hidden className="pulse-dot inline-block size-1.5 rounded-full" style={{ background: tint, color: tint }} />
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
         {ratio} checks ok
       </span>
     </div>

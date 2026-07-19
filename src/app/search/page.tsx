@@ -1,21 +1,12 @@
-import { TopNav } from "@/components/TopNav";
-import { Sidebar } from "@/components/Sidebar";
+import { PageHeader } from "@/components/PageHeader";
+import { SearchForm } from "@/components/SearchForm";
 import { getHandlesByTx } from "@/lib/subgraph";
-import { getPrices } from "@/lib/price";
-import { opCategory } from "@/lib/nox";
+import { opCategory, CAT_COLOR } from "@/lib/nox";
 import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
 import { ChainBadge } from "@/components/ChainBadge";
 
+export const metadata = { title: "Advanced Search" };
 export const revalidate = 0;
-
-const CAT_COLOR: Record<string, string> = {
-  arithmetic: "var(--color-accent)",
-  comparison: "#a78bfa",
-  token: "var(--color-positive)",
-  control: "#fb923c",
-  acl: "#38bdf8",
-  other: "var(--color-muted)",
-};
 
 export default async function SearchPage({
   searchParams,
@@ -23,7 +14,6 @@ export default async function SearchPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const prices = await getPrices().catch(() => null);
   const query = q?.trim();
 
   let handles: Awaited<ReturnType<typeof getHandlesByTx>> = [];
@@ -40,33 +30,20 @@ export default async function SearchPage({
   }
 
   return (
-    <div className="min-h-screen">
-      <TopNav />
-      <div className="flex">
-        <Sidebar rlcPrice={prices?.rlc} activeKey="search" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/40 px-6 py-4 backdrop-blur lg:px-10">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted-2)]">Search</div>
-            <h1 className="font-display mt-1 text-[22px] font-medium tracking-tight">Advanced Search</h1>
-          </div>
+    <>
+      <PageHeader kicker="Search" title="Advanced Search" />
 
-          <main className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
-            <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
-              Search compute operations by transaction hash to see every handle created in a single tx. Or enter an address to go to the Address Profile.
-            </p>
+      <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
+        <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
+          Search compute operations by transaction hash to see every handle created in a single tx. Or enter an address to go to the Address Profile.
+        </p>
 
-            <form method="get" className="mb-8 flex gap-2">
-              <input
-                type="text"
-                name="q"
-                defaultValue={query ?? ""}
-                placeholder="0x… tx hash or address"
-                className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-4 py-3 font-mono text-[14px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)] focus:outline-none"
-              />
-              <button type="submit" className="btn-yellow rounded-xl px-6 py-3 font-mono text-[13px]">
-                Search
-              </button>
-            </form>
+        <SearchForm
+          name="q"
+          label="Transaction hash or address"
+          placeholder="0x… tx hash or address"
+          defaultValue={query}
+        />
 
             {error && (
               <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-mono text-[13px] text-amber-300">
@@ -156,9 +133,7 @@ export default async function SearchPage({
                 </div>
               </div>
             )}
-          </main>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

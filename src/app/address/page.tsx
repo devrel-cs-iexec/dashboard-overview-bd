@@ -1,11 +1,12 @@
-import { TopNav } from "@/components/TopNav";
-import { Sidebar } from "@/components/Sidebar";
+import { PageHeader } from "@/components/PageHeader";
+import { SearchForm } from "@/components/SearchForm";
+import { StatTiles } from "@/components/StatTiles";
 import { scanRolesByAddress } from "@/lib/subgraph";
 import { loadTvsEvents } from "@/lib/tvs";
-import { getPrices } from "@/lib/price";
 import { relativeTime, shortAddress, formatTokenAmount, formatUsd, explorerTx, explorerAddress } from "@/lib/format";
 import { ChainBadge } from "@/components/ChainBadge";
 
+export const metadata = { title: "Address Profile" };
 export const revalidate = 0;
 
 export default async function AddressPage({
@@ -14,7 +15,6 @@ export default async function AddressPage({
   searchParams: Promise<{ addr?: string }>;
 }) {
   const { addr } = await searchParams;
-  const prices = await getPrices().catch(() => null);
   const address = addr?.trim().toLowerCase();
 
   let roles: Awaited<ReturnType<typeof scanRolesByAddress>> = [];
@@ -32,48 +32,28 @@ export default async function AddressPage({
   }
 
   return (
-    <div className="min-h-screen">
-      <TopNav />
-      <div className="flex">
-        <Sidebar rlcPrice={prices?.rlc} activeKey="address" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/40 px-6 py-4 backdrop-blur lg:px-10">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted-2)]">Dashboards</div>
-            <h1 className="font-display mt-1 text-[22px] font-medium tracking-tight">Address Profile</h1>
-          </div>
+    <>
+      <PageHeader kicker="Dashboards" title="Address Profile" />
 
-          <main className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
-            <form method="get" className="mb-8 flex gap-2">
-              <input
-                type="text"
-                name="addr"
-                defaultValue={addr ?? ""}
-                placeholder="0x… wallet or contract address"
-                className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-4 py-3 font-mono text-[14px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)] focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="btn-yellow rounded-xl px-6 py-3 font-mono text-[13px]"
-              >
-                Lookup
-              </button>
-            </form>
+      <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
+        <SearchForm
+          name="addr"
+          label="Wallet or contract address"
+          placeholder="0x… wallet or contract address"
+          defaultValue={addr}
+          submitLabel="Lookup"
+        />
 
             {address ? (
               <div className="space-y-8">
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-border)] lg:grid-cols-3">
-                  {[
+                <StatTiles
+                  columns={3}
+                  stats={[
                     { label: "ACL grants", value: roles.length.toLocaleString() },
                     { label: "Shield/Unshield events", value: tvsEvents.length.toLocaleString() },
                     { label: "TVS USD volume", value: formatUsd(tvsEvents.reduce((s, e) => s + e.amountUsd, 0)) },
-                  ].map((t) => (
-                    <div key={t.label} className="bg-[var(--color-surface)] p-5 lg:p-6">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">{t.label}</div>
-                      <div className="display-num font-display mt-3 text-2xl font-medium leading-none">{t.value}</div>
-                    </div>
-                  ))}
-                </div>
+                  ]}
+                />
 
                 {/* ACL grants */}
                 {roles.length > 0 && (
@@ -177,9 +157,7 @@ export default async function AddressPage({
                 Enter an address above to view its full activity profile.
               </div>
             )}
-          </main>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

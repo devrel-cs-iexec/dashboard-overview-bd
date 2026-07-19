@@ -1,12 +1,11 @@
-import { TopNav } from "@/components/TopNav";
-import { LiveRefresh } from "@/components/LiveRefresh";
-import { Sidebar } from "@/components/Sidebar";
+import { PageHeader } from "@/components/PageHeader";
+import { StatTiles } from "@/components/StatTiles";
 import { scanConfidentialTransfers } from "@/lib/ponder";
-import { getPrices } from "@/lib/price";
 import { relativeTime, shortAddress, explorerTx, explorerAddress } from "@/lib/format";
 import { ChainBadge } from "@/components/ChainBadge";
 import { TOKENS } from "@/lib/nox";
 
+export const metadata = { title: "Confidential Transfers" };
 export const revalidate = 60;
 
 const KIND_STYLE = {
@@ -21,38 +20,33 @@ function resolveTokenSymbol(address: string): string {
 }
 
 export default async function TransfersPage() {
-  const [result, prices] = await Promise.all([
-    scanConfidentialTransfers(200),
-    getPrices().catch(() => null),
-  ]);
+  const { items: transfers, online: ponderOnline } =
+    await scanConfidentialTransfers(200);
 
-  const { items: transfers, online: ponderOnline } = result;
   const mintCount = transfers.filter((t) => t.kind === "MINT").length;
   const burnCount = transfers.filter((t) => t.kind === "BURN").length;
   const xferCount = transfers.filter((t) => t.kind === "TRANSFER").length;
 
-  return (
-    <div className="min-h-screen">
-      <TopNav />
-      <LiveRefresh />
-      <div className="flex">
-        <Sidebar rlcPrice={prices?.rlc} activeKey="transfers" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)]/40 px-6 py-4 backdrop-blur lg:px-10">
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted-2)]">Dashboards</div>
-              <h1 className="font-display mt-1 text-[22px] font-medium tracking-tight">Confidential Transfers</h1>
-            </div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
-              <span className={`pulse-dot inline-block size-1.5 rounded-full ${transfers.length > 0 ? "bg-[var(--color-positive)]" : ponderOnline ? "bg-blue-400" : "bg-amber-400"}`} />
-              {transfers.length > 0 ? "Ponder · ISR 60s" : ponderOnline ? "Ponder syncing" : "Ponder offline"}
-            </span>
-          </div>
+  const ponderState =
+    transfers.length > 0
+      ? { dot: "bg-[var(--color-positive)]", label: "Ponder · ISR 60s" }
+      : ponderOnline
+        ? { dot: "bg-blue-400", label: "Ponder syncing" }
+        : { dot: "bg-amber-400", label: "Ponder offline" };
 
-          <main className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
-            <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
-              ERC-7984 token events indexed by Ponder. Transfer amounts are encrypted (euint256 handle) — only the sender, receiver, and event type are visible on-chain.
-            </p>
+  return (
+    <>
+      <PageHeader kicker="Dashboards" title="Confidential Transfers">
+        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
+          <span aria-hidden className={`pulse-dot inline-block size-1.5 rounded-full ${ponderState.dot}`} />
+          {ponderState.label}
+        </span>
+      </PageHeader>
+
+      <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
+        <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
+          ERC-7984 token events indexed by Ponder. Transfer amounts are encrypted (euint256 handle) — only the sender, receiver, and event type are visible on-chain.
+        </p>
 
             {transfers.length === 0 ? (
               <div className="surface-solid rounded-2xl px-8 py-16 text-center">
@@ -74,23 +68,15 @@ export default async function TransfersPage() {
               </div>
             ) : (
               <>
-                <div className="mb-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-border)] lg:grid-cols-4">
-                  {[
-                    { label: "Total events", value: transfers.length.toLocaleString(), color: undefined },
-                    { label: "Mints", value: mintCount.toLocaleString(), color: "var(--color-positive)" },
-                    { label: "Burns", value: burnCount.toLocaleString(), color: "var(--color-negative)" },
-                    { label: "Transfers", value: xferCount.toLocaleString(), color: "#38bdf8" },
-                  ].map((t) => (
-                    <div key={t.label} className="bg-[var(--color-surface)] p-5 lg:p-6">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">{t.label}</div>
-                      <div
-                        className="display-num font-display mt-3 text-3xl font-medium leading-none lg:text-4xl"
-                        style={t.color ? { color: t.color } : undefined}
-                      >
-                        {t.value}
-                      </div>
-                    </div>
-                  ))}
+                <div className="mb-8">
+                  <StatTiles
+                    stats={[
+                      { label: "Total events", value: transfers.length.toLocaleString() },
+                      { label: "Mints", value: mintCount.toLocaleString(), color: "var(--color-positive)" },
+                      { label: "Burns", value: burnCount.toLocaleString(), color: "var(--color-negative)" },
+                      { label: "Transfers", value: xferCount.toLocaleString(), color: "#38bdf8" },
+                    ]}
+                  />
                 </div>
 
                 <div className="surface-solid overflow-hidden rounded-2xl">
@@ -168,9 +154,7 @@ export default async function TransfersPage() {
                 </div>
               </>
             )}
-          </main>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }
