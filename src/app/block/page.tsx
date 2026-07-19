@@ -45,7 +45,7 @@ export default async function BlockPage({
 
   return (
     <div className="min-h-screen">
-      <TopNav showOpenDashboard={false} />
+      <TopNav />
       <div className="flex">
         <Sidebar rlcPrice={prices?.rlc} activeKey="block" />
         <div className="flex min-w-0 flex-1 flex-col">

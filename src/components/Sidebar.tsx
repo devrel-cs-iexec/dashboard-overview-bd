@@ -10,7 +10,7 @@ const SECTIONS: { kicker: string; items: NavItem[] }[] = [
   {
     kicker: "Dashboards",
     items: [
-      { key: "tvs", label: "TVS Dashboard", href: "/tvs" },
+      { key: "tvs", label: "TVS Dashboard", href: "/" },
       { key: "transfers", label: "Confidential Transfers", href: "/transfers" },
       { key: "wraps", label: "Shield / Unshield", href: "/wraps" },
       { key: "events", label: "Nox Events", href: "/events" },

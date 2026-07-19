@@ -21,13 +21,16 @@ const anybody = Anybody({
 });
 
 export const metadata: Metadata = {
-  title: "Nox · live protocol activity, then dive into every tool",
+  title: {
+    default: "Nox·Stats — live protocol activity",
+    template: "%s · Nox·Stats",
+  },
   description:
-    "Follow live on-chain activity across the Nox protocol in one feed. Open the dashboard for TVS, charts, and every module in the sidebar.",
+    "Live on-chain view of the Nox protocol — total value shielded, confidential transfers, compute operations and access control across ARB and ETH Sepolia.",
   openGraph: {
-    title: "Nox · live protocol activity",
+    title: "Nox·Stats — live protocol activity",
     description:
-      "Real-time view of the Nox protocol — shielding, staking, decryption, and every module in one place.",
+      "Real-time view of the Nox protocol — shielding, confidential transfers, decryption and every module in one place.",
   },
 };
 

@@ -32,7 +32,7 @@ export default async function OpsPage() {
 
   return (
     <div className="min-h-screen">
-      <TopNav showOpenDashboard={false} />
+      <TopNav />
       <LiveRefresh />
       <div className="flex">
         <Sidebar rlcPrice={data.prices.rlc} activeKey="ops" />

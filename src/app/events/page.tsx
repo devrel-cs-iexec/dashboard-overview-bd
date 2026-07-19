@@ -23,7 +23,7 @@ export default async function EventsPage() {
 
   return (
     <div className="min-h-screen">
-      <TopNav showOpenDashboard={false} />
+      <TopNav />
       <LiveRefresh />
       <div className="flex">
         <Sidebar rlcPrice={prices?.rlc} activeKey="events" />

@@ -39,7 +39,7 @@ export default async function WrapsPage() {
 
   return (
     <div className="min-h-screen">
-      <TopNav showOpenDashboard={false} />
+      <TopNav />
       <LiveRefresh intervalMs={60_000} />
       <div className="flex">
         <Sidebar rlcPrice={payload.prices.rlc} activeKey="wraps" />

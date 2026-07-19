@@ -35,7 +35,7 @@ export default async function VerifyPage({
 
   return (
     <div className="min-h-screen">
-      <TopNav showOpenDashboard={false} />
+      <TopNav />
       <div className="flex">
         <Sidebar rlcPrice={prices?.rlc} activeKey="verify" />
         <div className="flex min-w-0 flex-1 flex-col">

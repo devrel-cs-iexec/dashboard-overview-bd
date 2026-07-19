@@ -33,7 +33,7 @@ export default async function AddressPage({
 
   return (
     <div className="min-h-screen">
-      <TopNav showOpenDashboard={false} />
+      <TopNav />
       <div className="flex">
         <Sidebar rlcPrice={prices?.rlc} activeKey="address" />
         <div className="flex min-w-0 flex-1 flex-col">

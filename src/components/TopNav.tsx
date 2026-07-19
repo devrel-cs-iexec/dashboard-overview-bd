@@ -2,13 +2,7 @@ import Link from "next/link";
 
 type Variant = "dark" | "transparent";
 
-export function TopNav({
-  variant = "dark",
-  showOpenDashboard = true,
-}: {
-  variant?: Variant;
-  showOpenDashboard?: boolean;
-}) {
+export function TopNav({ variant = "dark" }: { variant?: Variant }) {
   const isTransparent = variant === "transparent";
   return (
     <header className="sticky top-3 z-30 mx-auto w-full max-w-7xl px-4">
@@ -41,14 +35,6 @@ export function TopNav({
           </NavLink>
         </ul>
 
-        <div className="flex items-center gap-2">
-          {showOpenDashboard ? (
-            <Link href="/tvs" className="btn-yellow inline-flex items-center gap-2 text-[13px]">
-              Open Dashboard
-              <span aria-hidden>→</span>
-            </Link>
-          ) : null}
-        </div>
       </nav>
     </header>
   );
