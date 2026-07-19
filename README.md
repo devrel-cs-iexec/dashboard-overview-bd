@@ -1,73 +1,110 @@
 # iexec-nox-dashboard
 
 Real-time analytics for the [Nox Protocol](https://github.com/iExec-Nox) — confidential
-DeFi infrastructure built on Arbitrum Sepolia using TEEs and the ERC-7984 confidential
-token standard.
+DeFi infrastructure on Arbitrum and Ethereum Sepolia, built on TEEs and the ERC-7984
+confidential token standard.
 
-The dashboard answers three questions at a glance:
+The app opens directly on the TVS dashboard; every other view is reachable from the
+sidebar (or the drawer on mobile).
 
-- **How much value is currently secured** in confidential token wrappers?
-- **How many encrypted operations** has the protocol executed, and which primitives dominate?
-- **Who is using it** — admins, viewers, and the live transaction feed.
+## What it shows
 
-## Live data sources
+- **Total value shielded** — per token, across both chains, from shield/unshield flows
+- **Confidential transfers** — ERC-7984 mints, burns and encrypted transfers
+- **Compute operations** — every on-chain handle, by category and operator
+- **Access control** — ADMIN/VIEWER grants, and which handles are publicly decryptable
+- **Lookups** — by address, transaction, block, or handle ID
 
-- **RPC** (`viem`) — `https://sepolia-rollup.arbitrum.io/rpc`, Arbitrum Sepolia public endpoint.
-  Used for `inferredTotalSupply()` and `underlying()` calls on each ERC-7984 wrapper, which
-  give us the *plaintext* USDC / RLC backing held by the wrapper (encrypted balances stay
-  encrypted on-chain, so the wrapper reserve is the only honest measure of TVS).
-- **Subgraph** — self-hosted by iExec at
-  `https://thegraph.arbitrum-sepolia-testnet.noxprotocol.io/api/subgraphs/id/BjQAX2HpmsSAzURJimKDhjZZnkSJtaczA8RPumggrStb`.
-  Provides `Handle` and `HandleRole` entities backing the operation breakdown, top operators,
-  active wallets and live feed.
+## Data sources
+
+| Source | Used for | Configured by |
+| --- | --- | --- |
+| Arbitrum Sepolia RPC (`viem`) | `inferredTotalSupply()`, `underlying()`, `getLogs` scans, block timestamps | `ARB_SEPOLIA_RPC_URL` |
+| Ethereum Sepolia RPC (`viem`) | the same, for ETH-side wrappers | `ETH_SEPOLIA_RPC_URL` |
+| Ponder indexer (GraphQL) | handles, ACL roles, confidential transfers, token stats | `PONDER_URL` |
+| CoinGecko | RLC and USDC spot prices | — |
+
+Encrypted balances stay encrypted on-chain, so the wrapper reserve plus cumulative
+`UnwrapFinalized` amounts is the only honest measure of TVS — that is what `lib/tvs.ts`
+and `lib/data.ts` compute.
+
+Both RPC variables are optional and fall back to the public endpoints in the chain
+definitions, but those rate-limit the historical `getLogs` scans that back the TVS
+figures. Point them at a dedicated provider for any real deployment.
+
+`PONDER_URL` defaults to `http://localhost:42069/graphql`. When it is wrong or the
+indexer is down, indexer-backed pages degrade rather than crash — `/status` will tell
+you which dependency is failing.
 
 ## Stack
 
-- Next.js 16 (App Router, Turbopack, ISR `revalidate: 30`)
-- React 19, Tailwind v4 (no `tailwind.config` — theme is inlined in `globals.css`)
-- viem 2.x for typed RPC
-- graphql-request for the subgraph
-- framer-motion for entry animations
-- Geist Sans / Mono + Space Grotesk for the display headings
+- Next.js 16 (App Router, Turbopack) with per-route ISR
+- React 19, Tailwind v4 — no `tailwind.config`, the theme is inlined in `globals.css`
+- `viem` for typed RPC, `graphql-request` for the indexer
+- Mulish (body), Geist Mono (numerics), Anybody (display)
 
 ## Project layout
 
 ```
 src/
   app/
-    page.tsx           server component, calls loadDashboard()
-    layout.tsx         fonts + metadata
-    globals.css        theme tokens, surfaces, grid texture
+    layout.tsx         shell: TopNav, Sidebar, MobileNav, LiveRefresh
+    page.tsx           TVS dashboard (the site root)
+    error.tsx          route-level error boundary
+    loading.tsx        streamed skeleton
+    not-found.tsx      404
+    globals.css        theme tokens, surfaces, focus + skeleton styles
+    <route>/page.tsx   one file per dashboard section
   components/
-    Header.tsx         top nav + chain badge
-    Hero.tsx           headline + KPI strip
-    TokensSection.tsx  cUSDC / cRLC cards
-    OpsSection.tsx     top operators + category tiles
-    ActivitySection.tsx  live handle feed
-    Footer.tsx
-    Reveal.tsx         framer-motion entry wrapper (client)
+    Sidebar.tsx        desktop nav, active item from usePathname (client)
+    MobileNav.tsx      drawer below lg (client)
+    PageHeader.tsx     header strip + Live/Warn pills
+    StatTiles.tsx      the KPI grid
+    SearchForm.tsx     labelled lookup form
+    TvsTable.tsx  EventsTable.tsx  AclTable.tsx   (client, filtered + paginated)
   lib/
-    nox.ts             chain + contract addresses + token registry + op categories
-    viem.ts            public client
-    abi.ts             ERC-20 and wrapper ABI slices
-    subgraph.ts        typed queries
-    format.ts          number / token / address / time helpers
+    nav.ts             navigation, single source of truth
+    nox.ts             chains, contracts, token registry, op categories
+    viem.ts            RPC clients
+    subgraph.ts        typed indexer queries
+    ponder.ts          confidential-transfer queries
+    tvs.ts             loadTvsEvents() — shield/unshield scan + cache
     data.ts            loadDashboard() — fans out, aggregates, normalizes
+    format.ts          number / token / address / time helpers
 ```
 
 ## Running
 
 ```bash
 pnpm install
+cp .env.example .env.local   # then fill in the RPC URLs
 pnpm dev
 ```
 
-Then open <http://localhost:3000>. First load takes a few seconds while it warms up the
-RPC + subgraph; subsequent loads are served from ISR cache for 30 seconds.
+Then open <http://localhost:3000>. The first load takes a few seconds while the RPC and
+indexer warm up; after that pages are served from the ISR cache and refresh in the
+background while the tab is visible.
+
+```bash
+pnpm build && pnpm start   # production
+pnpm lint
+```
+
+## Known limitations
+
+- `scanHandles` and `scanRoles` cap at 12k / 8k rows. Past that, the headline counts
+  freeze rather than growing, and there is no truncation indicator yet.
+- `lib/tvs.ts` keeps a module-level cache. It is per-process, so on a multi-instance
+  deploy different users can see slightly different `partial` states.
+- The block inspector matches handles by timestamp window rather than block number,
+  which over-collects on fast chains. The indexer stores `blockNumber`; a keyed query
+  is the real fix.
+- Table filter state lives in `useState`, so it is not shareable via URL and the full
+  row set is serialized to the client on every refresh.
 
 ## Roadmap
 
-- Historical TVL chart (requires indexing `ERC20.Transfer` to wrapper + `UnwrapFinalized`)
-- Vault analytics on `ConfidentialERC7540Factory` (0xB9390…)
+- Historical TVL/TVS chart
+- Vault analytics on `ConfidentialERC7540Factory`
 - Per-operator drilldown pages
-- WebSocket-pushed updates instead of ISR polling
+- Server-side table filtering via `searchParams`
