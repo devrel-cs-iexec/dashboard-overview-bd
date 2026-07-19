@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { explorerAddress, explorerTx } from "@/lib/format";
-import { Reveal } from "./Reveal";
 
 export type TvsEventVM = {
   id: string;
@@ -84,8 +83,7 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
   const rows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
-    <Reveal>
-      <div className="surface-solid overflow-hidden rounded-2xl">
+    <div className="surface-solid overflow-hidden rounded-2xl">
         <TokenFilter
           chips={tokenChips}
           selected={token}
@@ -147,8 +145,7 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
           onPrev={() => setPage(Math.max(1, safePage - 1))}
           onNext={() => setPage(Math.min(totalPages, safePage + 1))}
         />
-      </div>
-    </Reveal>
+    </div>
   );
 }
 
