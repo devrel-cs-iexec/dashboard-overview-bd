@@ -37,7 +37,12 @@ export type TokenStats = ConfidentialToken & {
 export type OpsBreakdown = Record<OpCategory | "other", number>;
 
 export type DashboardData = {
-  meta: { block: number; timestamp: number; lagSeconds: number };
+  meta: {
+    block: number;
+    timestamp: number;
+    /** null when the indexer did not answer — not zero, and not the epoch. */
+    lagSeconds: number | null;
+  };
   prices: Prices;
   tokens: TokenStats[];
   totals: {
@@ -54,6 +59,11 @@ export type DashboardData = {
   };
   ops: OpsBreakdown;
   topOperators: { operator: string; count: number }[];
+  /**
+   * True when at least one token failed to load, or an unwrap scan did not
+   * complete. Totals are then a lower bound, not an authoritative figure.
+   */
+  partial: boolean;
 };
 
 export async function loadDashboard(): Promise<DashboardData> {
@@ -65,7 +75,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   ]);
 
   // Token stats need the prices, so resolve them after prices arrive
-  const tokenStats = await loadTokenStats(prices);
+  const { tokens: tokenStats, partial: tokensPartial } = await loadTokenStats(prices);
 
   const normalizeOp = (h: HandleRow): HandleRow => ({
     ...h,
@@ -121,7 +131,10 @@ export async function loadDashboard(): Promise<DashboardData> {
     meta: {
       block: meta.block.number,
       timestamp: meta.block.timestamp,
-      lagSeconds: Math.max(0, now - meta.block.timestamp),
+      // getMeta() falls back to timestamp 0 when the indexer is unreachable.
+      // Subtracting from `now` there yields the whole Unix epoch, so report
+      // "unknown" instead of a nonsense 54-year lag.
+      lagSeconds: meta.block.timestamp > 0 ? Math.max(0, now - meta.block.timestamp) : null,
     },
     prices,
     tokens: tokenStats,
@@ -139,14 +152,24 @@ export async function loadDashboard(): Promise<DashboardData> {
     },
     ops,
     topOperators,
+    partial: tokensPartial,
   };
 }
 
-async function loadTokenStats(prices: Prices): Promise<TokenStats[]> {
+async function loadTokenStats(
+  prices: Prices,
+): Promise<{ tokens: TokenStats[]; partial: boolean }> {
   const results = await Promise.allSettled(TOKENS.map((t) => loadOneTokenStats(t, prices)));
-  return results
+  const tokens = results
     .filter((r): r is PromiseFulfilledResult<TokenStats> => r.status === "fulfilled")
     .map((r) => r.value);
+
+  // A rejected token silently disappears from tvlUsd/tvsUsd, so the caller
+  // needs to know it happened rather than reading an under-count as truth.
+  const partial =
+    tokens.length !== TOKENS.length || tokens.some((t) => !t.unwrapsScanned);
+
+  return { tokens, partial };
 }
 
 async function loadOneTokenStats(
@@ -154,6 +177,11 @@ async function loadOneTokenStats(
   prices: Prices,
 ): Promise<TokenStats> {
   const client = token.chainId === 11155111 ? ethSepoliaClient : publicClient;
+
+  // Tracks whether the unwrap scan actually completed. If it did not, tvs is
+  // only a lower bound and must not be presented as authoritative.
+  let unwrapsScanned = true;
+
   const [tvl, underlying, ponderStats, unwrapLogs] = await Promise.all([
     client.readContract({
       address: token.wrapper,
@@ -175,7 +203,10 @@ async function loadOneTokenStats(
         fromBlock: token.fromBlock,
         toBlock: "latest",
       })
-      .catch(() => [] as never[]),
+      .catch(() => {
+        unwrapsScanned = false;
+        return [] as never[];
+      }),
   ]);
 
   let cumulativeUnwraps = 0n;
@@ -204,7 +235,7 @@ async function loadOneTokenStats(
     holderCount: ponderStats ? Number(ponderStats.holderCount) : 0,
     tvlUsd: toUsd(tvl),
     tvsUsd: toUsd(tvs),
-    unwrapsScanned: true,
+    unwrapsScanned,
   };
 }
 

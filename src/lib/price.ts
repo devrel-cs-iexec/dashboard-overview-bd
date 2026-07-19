@@ -21,9 +21,19 @@ export async function getPrices(): Promise<Prices> {
     );
     if (!res.ok) return FALLBACK;
     const json = (await res.json()) as Record<string, { usd?: number }>;
+
+    const rlc = Number(json["iexec-rlc"]?.usd);
+    const usdc = Number(json["usd-coin"]?.usd);
+
+    // A 200 can still carry a rate-limit body, a renamed coin id, or a partial
+    // payload. Treating that as live produced a confident "$0" for RLC across
+    // every USD figure on the site, so require a usable price before claiming
+    // the feed is live.
+    if (!Number.isFinite(rlc) || rlc <= 0) return FALLBACK;
+
     return {
-      rlc: Number(json["iexec-rlc"]?.usd) || 0,
-      usdc: Number(json["usd-coin"]?.usd) || 1,
+      rlc,
+      usdc: Number.isFinite(usdc) && usdc > 0 ? usdc : 1,
       live: true,
     };
   } catch {

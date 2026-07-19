@@ -1,4 +1,4 @@
-import { PageHeader, LivePill } from "@/components/PageHeader";
+import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { loadDashboard } from "@/lib/data";
 import { formatUsd } from "@/lib/format";
@@ -17,7 +17,11 @@ export default async function OpsPage() {
   return (
     <>
       <PageHeader kicker="Compute" title="Operation Stats">
-        <LivePill />
+        {data.partial ? (
+          <WarnPill label="Partial · some token data unavailable" />
+        ) : (
+          <LivePill />
+        )}
       </PageHeader>
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
@@ -109,7 +113,7 @@ export default async function OpsPage() {
                         { label: "TVL", value: formatUsd(t.tvlUsd) },
                         { label: "TVS", value: formatUsd(t.tvsUsd) },
                         { label: "Unwrap events", value: t.unwrapCount.toLocaleString() },
-                        { label: "Scan status", value: t.unwrapsScanned ? "OK" : "Ponder down" },
+                        { label: "Unwrap scan", value: t.unwrapsScanned ? "Complete" : "Failed — TVS is a lower bound" },
                       ].map((m) => (
                         <div key={m.label}>
                           <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-muted-2)]">{m.label}</div>
