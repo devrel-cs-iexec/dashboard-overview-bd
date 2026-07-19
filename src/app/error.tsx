@@ -28,9 +28,9 @@ export default function Error({
           This view could not be loaded.
         </h1>
         <p className="mt-3 text-[14px] leading-[1.55] text-[var(--color-muted)]">
-          One of the upstream dependencies — an RPC endpoint, the Ponder indexer,
-          or the price feed — did not answer. The data is not lost; the request
-          simply failed. Check{" "}
+          One of the upstream dependencies — an RPC endpoint, the Ponder indexer, or the
+          price feed — did not answer. The data is not lost; the request simply failed.
+          Check{" "}
           <a href="/status" className="text-[var(--color-accent)] hover:underline">
             System Status
           </a>{" "}

@@ -38,13 +38,13 @@
   --color-muted-2: rgba(229, 234, 244, 0.42);
 
   /* Accents */
-  --color-accent: #fcd15a;            /* primary CTA (iexec yellow) */
+  --color-accent: #fcd15a; /* primary CTA (iexec yellow) */
   --color-accent-strong: #fdb40e;
-  --color-accent-soft: #fde6a4;       /* readable accent text on dark surfaces */
+  --color-accent-soft: #fde6a4; /* readable accent text on dark surfaces */
   --color-accent-dim: rgba(252, 209, 90, 0.16);
   --color-warm: #fb923c;
 
-  --color-lavender: #6e7edf;          /* iexec hotword */
+  --color-lavender: #6e7edf; /* iexec hotword */
   --color-lavender-hover: #92a1ff;
   --color-lavender-soft: #baa7ff;
   --color-lavender-dim: rgba(110, 126, 223, 0.12);
@@ -67,7 +67,13 @@ html,
 body {
   background: var(--color-background);
   color: var(--color-foreground);
-  font-family: var(--font-sans), Mulish, Inter, system-ui, -apple-system, sans-serif;
+  font-family:
+    var(--font-sans),
+    Mulish,
+    Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 body {
@@ -77,7 +83,11 @@ body {
 /* ===== Surfaces ===== */
 
 .surface {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.005));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.005)
+  );
   border: 1px solid var(--color-border);
   backdrop-filter: blur(8px);
 }
@@ -88,11 +98,18 @@ body {
 }
 
 .surface-hover {
-  transition: border-color 200ms ease, transform 200ms ease, background 200ms ease;
+  transition:
+    border-color 200ms ease,
+    transform 200ms ease,
+    background 200ms ease;
 }
 .surface-hover:hover {
   border-color: var(--color-border-strong);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.01)
+  );
 }
 
 /* Light card on light page */
@@ -100,7 +117,10 @@ body {
   background: var(--color-page-2);
   border: 1px solid var(--color-page-border);
   border-radius: 16px;
-  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
 }
 .card-light:hover {
   border-color: var(--color-page-border-strong);
@@ -122,8 +142,12 @@ body {
 /* ===== Hero gradient backdrop (dark) ===== */
 .hero-dark {
   background:
-    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(146, 161, 255, 0.20), transparent 65%),
-    radial-gradient(ellipse 80% 50% at 100% 100%, rgba(186, 167, 255, 0.10), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(146, 161, 255, 0.2), transparent 65%),
+    radial-gradient(
+      ellipse 80% 50% at 100% 100%,
+      rgba(186, 167, 255, 0.1),
+      transparent 60%
+    ),
     var(--color-shell);
 }
 
@@ -160,10 +184,16 @@ body {
   padding: 0.625rem 1.25rem;
   font-size: 14px;
   letter-spacing: -0.01em;
-  transition: background 180ms ease, transform 180ms ease;
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
 }
-.btn-yellow:hover { background: var(--color-accent-strong); }
-.btn-yellow:active { transform: scale(0.985); }
+.btn-yellow:hover {
+  background: var(--color-accent-strong);
+}
+.btn-yellow:active {
+  transform: scale(0.985);
+}
 
 .btn-outline-dark {
   background: transparent;
@@ -172,7 +202,9 @@ body {
   border-radius: 9999px;
   padding: 0.625rem 1.25rem;
   font-size: 14px;
-  transition: background 180ms ease, border-color 180ms ease;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease;
 }
 .btn-outline-dark:hover {
   background: rgba(255, 255, 255, 0.06);
@@ -186,7 +218,9 @@ body {
   border-radius: 9999px;
   padding: 0.625rem 1.25rem;
   font-size: 14px;
-  transition: background 180ms ease, border-color 180ms ease;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease;
 }
 .btn-outline-light:hover {
   background: rgba(20, 20, 26, 0.04);
@@ -194,7 +228,9 @@ body {
 }
 
 /* ===== Indicators ===== */
-.pulse-dot { position: relative; }
+.pulse-dot {
+  position: relative;
+}
 .pulse-dot::after {
   content: "";
   position: absolute;
@@ -205,12 +241,22 @@ body {
   animation: pulse-ring 2s ease-out infinite;
 }
 @keyframes pulse-ring {
-  0% { transform: scale(0.6); opacity: 0.6; }
-  100% { transform: scale(1.8); opacity: 0; }
+  0% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
 
 /* ===== Focus =====
  * The UA outline is near-invisible on the dark shell surfaces, so every
@@ -237,8 +283,12 @@ a:focus-visible {
   animation: skeleton-shimmer 1.4s ease infinite;
 }
 @keyframes skeleton-shimmer {
-  0% { background-position: 100% 50%; }
-  100% { background-position: 0 50%; }
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
 }
 
 /* Available to screen readers, absent from the visual layout. */

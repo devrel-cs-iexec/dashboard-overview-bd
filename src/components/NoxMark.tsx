@@ -10,7 +10,13 @@ const GRADIENTS: Record<Tone, [string, string]> = {
  * same tone on one page emit identical <defs>, which is harmless, while
  * different tones stay isolated.
  */
-export function NoxMark({ tone = "lavender", size = 22 }: { tone?: Tone; size?: number }) {
+export function NoxMark({
+  tone = "lavender",
+  size = 22,
+}: {
+  tone?: Tone;
+  size?: number;
+}) {
   const [from, to] = GRADIENTS[tone];
   const id = `nox-mark-${tone}`;
   return (

@@ -15,7 +15,9 @@ export default async function WrapsPage() {
   const events: TvsEventVM[] = payload.events.map(toTvsEventVM);
 
   const byToken = TOKENS.map((t) => {
-    const tokenEvents = events.filter((e) => e.symbol === t.underlyingSymbol && e.chainId === t.chainId);
+    const tokenEvents = events.filter(
+      (e) => e.symbol === t.underlyingSymbol && e.chainId === t.chainId,
+    );
     const shields = tokenEvents.filter((e) => e.direction === "shield");
     const unshields = tokenEvents.filter((e) => e.direction === "unshield");
     return { ...t, shields, unshields, total: tokenEvents.length };
@@ -48,15 +50,23 @@ export default async function WrapsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-positive)]">Shield</div>
-                  <div className="mt-1 font-display text-[22px] font-medium">{t.shields.length.toLocaleString()}</div>
+                  <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-positive)]">
+                    Shield
+                  </div>
+                  <div className="mt-1 font-display text-[22px] font-medium">
+                    {t.shields.length.toLocaleString()}
+                  </div>
                   <div className="mt-0.5 font-mono text-[11px] text-[var(--color-muted)]">
                     {formatUsd(t.shields.reduce((s, e) => s + e.amountUsd, 0))}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-negative)]">Unshield</div>
-                  <div className="mt-1 font-display text-[22px] font-medium">{t.unshields.length.toLocaleString()}</div>
+                  <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-negative)]">
+                    Unshield
+                  </div>
+                  <div className="mt-1 font-display text-[22px] font-medium">
+                    {t.unshields.length.toLocaleString()}
+                  </div>
                   <div className="mt-0.5 font-mono text-[11px] text-[var(--color-muted)]">
                     {formatUsd(t.unshields.reduce((s, e) => s + e.amountUsd, 0))}
                   </div>

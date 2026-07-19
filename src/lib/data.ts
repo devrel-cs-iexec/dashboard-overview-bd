@@ -1,18 +1,8 @@
 import { wrapperAbi, erc20Abi, unwrapFinalizedEvent } from "./abi";
-import {
-  TOKENS,
-  opCategory,
-  type OpCategory,
-  type ConfidentialToken,
-} from "./nox";
+import { TOKENS, opCategory, type OpCategory, type ConfidentialToken } from "./nox";
 import { publicClient, ethSepoliaClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
-import {
-  getMeta,
-  scanHandles,
-  scanRoles,
-  type HandleRow,
-} from "./subgraph";
+import { getMeta, scanHandles, scanRoles, type HandleRow } from "./subgraph";
 import { getPonderTokenStats } from "./ponder";
 
 export type TokenStats = ConfidentialToken & {
@@ -134,7 +124,8 @@ export async function loadDashboard(): Promise<DashboardData> {
       // getMeta() falls back to timestamp 0 when the indexer is unreachable.
       // Subtracting from `now` there yields the whole Unix epoch, so report
       // "unknown" instead of a nonsense 54-year lag.
-      lagSeconds: meta.block.timestamp > 0 ? Math.max(0, now - meta.block.timestamp) : null,
+      lagSeconds:
+        meta.block.timestamp > 0 ? Math.max(0, now - meta.block.timestamp) : null,
     },
     prices,
     tokens: tokenStats,
@@ -159,7 +150,9 @@ export async function loadDashboard(): Promise<DashboardData> {
 async function loadTokenStats(
   prices: Prices,
 ): Promise<{ tokens: TokenStats[]; partial: boolean }> {
-  const results = await Promise.allSettled(TOKENS.map((t) => loadOneTokenStats(t, prices)));
+  const results = await Promise.allSettled(
+    TOKENS.map((t) => loadOneTokenStats(t, prices)),
+  );
   const tokens = results
     .filter((r): r is PromiseFulfilledResult<TokenStats> => r.status === "fulfilled")
     .map((r) => r.value);

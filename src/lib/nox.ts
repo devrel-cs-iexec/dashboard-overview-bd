@@ -99,16 +99,7 @@ export const TOKENS: readonly ConfidentialToken[] = [
 
 export const NOX_OP_CATEGORIES = {
   token: ["Transfer", "Mint", "Burn"],
-  arithmetic: [
-    "Add",
-    "Sub",
-    "Mul",
-    "Div",
-    "SafeAdd",
-    "SafeSub",
-    "SafeMul",
-    "SafeDiv",
-  ],
+  arithmetic: ["Add", "Sub", "Mul", "Div", "SafeAdd", "SafeSub", "SafeMul", "SafeDiv"],
   comparison: ["Eq", "Ne", "Lt", "Le", "Gt", "Ge"],
   control: ["Select", "WrapAsPublicHandle"],
   acl: ["Allowed", "ViewerAdded", "MarkedAsPubliclyDecryptable"],

@@ -9,7 +9,11 @@ export function formatCompactNumber(value: number | bigint, decimals = 1): strin
   return n.toPrecision(2);
 }
 
-export function formatTokenAmount(raw: bigint, decimals: number, displayDecimals = 2): string {
+export function formatTokenAmount(
+  raw: bigint,
+  decimals: number,
+  displayDecimals = 2,
+): string {
   const negative = raw < 0n;
   const abs = negative ? -raw : raw;
   const divisor = 10n ** BigInt(decimals);

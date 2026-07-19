@@ -184,7 +184,12 @@ export async function scanHandles(opts: {
   let after: string | null = null;
 
   for (let i = 0; i < maxPages; i++) {
-    type R = { fheHandles: { items: PonderHandle[]; pageInfo: { hasNextPage: boolean; endCursor: string } } };
+    type R = {
+      fheHandles: {
+        items: PonderHandle[];
+        pageInfo: { hasNextPage: boolean; endCursor: string };
+      };
+    };
     let res: R;
     try {
       if (opts.publicOnly) {
@@ -245,7 +250,12 @@ export async function scanRoles(opts: {
   let after: string | null = null;
 
   for (let i = 0; i < maxPages; i++) {
-    type R = { aclGrants: { items: PonderGrant[]; pageInfo: { hasNextPage: boolean; endCursor: string } } };
+    type R = {
+      aclGrants: {
+        items: PonderGrant[];
+        pageInfo: { hasNextPage: boolean; endCursor: string };
+      };
+    };
     let res: R;
     try {
       res = await client.request<R>(GRANTS_PAGE_QUERY, { limit: pageSize, after });
@@ -314,7 +324,10 @@ export async function scanRolesByAddress(address: string): Promise<HandleRoleRow
     const seen = new Set<string>();
     const merged: HandleRoleRow[] = [];
     for (const g of [...asAccount.aclGrants.items, ...asGrantor.aclGrants.items]) {
-      if (!seen.has(g.id)) { seen.add(g.id); merged.push(toRoleRow(g)); }
+      if (!seen.has(g.id)) {
+        seen.add(g.id);
+        merged.push(toRoleRow(g));
+      }
     }
     return merged.sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp));
   } catch {
@@ -326,10 +339,7 @@ export async function scanRolesByAddress(address: string): Promise<HandleRoleRow
 
 const HANDLES_BY_TX_QUERY = gql`
   query HandlesByTx($txHash: String!) {
-    fheHandles(
-      where: { transactionHash: $txHash }
-      limit: 1000
-    ) {
+    fheHandles(where: { transactionHash: $txHash }, limit: 1000) {
       items {
         id
         operator

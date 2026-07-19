@@ -29,10 +29,9 @@ export default async function StatusPage() {
 
   const okCount = checks.filter((c) => c.status === "ok").length;
   const total = checks.length;
-  const overall: Check["status"] =
-    checks.some((c) => c.status === "down")
-      ? "down"
-      : checks.some((c) => c.status === "warn")
+  const overall: Check["status"] = checks.some((c) => c.status === "down")
+    ? "down"
+    : checks.some((c) => c.status === "warn")
       ? "warn"
       : "ok";
 
@@ -51,9 +50,9 @@ export default async function StatusPage() {
               : "Service disruption — at least one dependency is down."}
         </h2>
         <p className="mt-3 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
-          Real-time health probe of every dependency that powers Nox·Stats. Each
-          check runs server-side on every request — no cache — so what you see
-          is what answered just now.
+          Real-time health probe of every dependency that powers Nox·Stats. Each check
+          runs server-side on every request — no cache — so what you see is what answered
+          just now.
         </p>
 
         <ul className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -99,7 +98,10 @@ function CheckCard({ check }: { check: Check }) {
 }
 
 function StatusBadge({ status }: { status: Check["status"] }) {
-  const map: Record<Check["status"], { label: string; dot: string; text: string; bg: string }> = {
+  const map: Record<
+    Check["status"],
+    { label: string; dot: string; text: string; bg: string }
+  > = {
     ok: {
       label: "Operational",
       dot: "var(--color-positive)",
@@ -136,11 +138,15 @@ function OverallPill({ status, ratio }: { status: Check["status"]; ratio: string
     status === "ok"
       ? "var(--color-positive)"
       : status === "warn"
-      ? "#e1a32a"
-      : "var(--color-negative)";
+        ? "#e1a32a"
+        : "var(--color-negative)";
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1">
-      <span aria-hidden className="pulse-dot inline-block size-1.5 rounded-full" style={{ background: tint, color: tint }} />
+      <span
+        aria-hidden
+        className="pulse-dot inline-block size-1.5 rounded-full"
+        style={{ background: tint, color: tint }}
+      />
       <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
         {ratio} checks ok
       </span>
@@ -190,7 +196,8 @@ async function checkEthRpc(): Promise<Check> {
     const ms = Date.now() - t0;
     return {
       name: "Ethereum Sepolia RPC",
-      detail: "Tenderly authenticated endpoint — ETH Sepolia wrapper TVL scans and block timestamps.",
+      detail:
+        "Tenderly authenticated endpoint — ETH Sepolia wrapper TVL scans and block timestamps.",
       status: chainId === ethereumSepolia.id ? (ms < 1500 ? "ok" : "warn") : "down",
       meta: [
         { label: "Chain", value: String(chainId) },
@@ -215,17 +222,34 @@ async function checkSubgraph(): Promise<Check> {
   try {
     const meta = await getMeta();
     const ms = Date.now() - t0;
-    const lag = meta.block.timestamp > 0
-      ? Math.floor(Date.now() / 1000) - meta.block.timestamp
-      : null;
+    const lag =
+      meta.block.timestamp > 0
+        ? Math.floor(Date.now() / 1000) - meta.block.timestamp
+        : null;
     const syncing = meta.block.number === 0;
     return {
       name: "Ponder indexer",
       detail: "Ponder GraphQL node — powers handles, roles, ops, confidential transfers.",
-      status: syncing ? "warn" : lag !== null && lag > 300 ? "warn" : ms < 2000 ? "ok" : "warn",
+      status: syncing
+        ? "warn"
+        : lag !== null && lag > 300
+          ? "warn"
+          : ms < 2000
+            ? "ok"
+            : "warn",
       meta: [
-        { label: "Head block", value: syncing ? "syncing…" : meta.block.number.toLocaleString() },
-        { label: "Indexer lag", value: syncing ? "backfilling" : lag !== null && lag > 0 ? relativeTime(meta.block.timestamp) : "live" },
+        {
+          label: "Head block",
+          value: syncing ? "syncing…" : meta.block.number.toLocaleString(),
+        },
+        {
+          label: "Indexer lag",
+          value: syncing
+            ? "backfilling"
+            : lag !== null && lag > 0
+              ? relativeTime(meta.block.timestamp)
+              : "live",
+        },
         { label: "Round-trip", value: `${ms} ms` },
         { label: "Endpoint", value: ponderUrl.replace(/^https?:\/\//, "") },
       ],
@@ -250,7 +274,8 @@ async function checkPrices(): Promise<Check> {
     const ms = Date.now() - t0;
     return {
       name: "CoinGecko prices",
-      detail: "Live RLC + USDC USD prices feed the TVL / TVS conversions across the dashboard.",
+      detail:
+        "Live RLC + USDC USD prices feed the TVL / TVS conversions across the dashboard.",
       status: p.live ? (ms < 1500 ? "ok" : "warn") : "warn",
       meta: [
         { label: "RLC", value: p.rlc ? `$${p.rlc.toFixed(4)}` : "—" },
@@ -269,7 +294,11 @@ async function checkPrices(): Promise<Check> {
   }
 }
 
-async function checkWrapper(address: `0x${string}`, symbol: string, chainId: number): Promise<Check> {
+async function checkWrapper(
+  address: `0x${string}`,
+  symbol: string,
+  chainId: number,
+): Promise<Check> {
   const t0 = Date.now();
   const chain = chainId === 11155111 ? "ETH" : "ARB";
   const client = chainId === 11155111 ? ethSepoliaClient : publicClient;

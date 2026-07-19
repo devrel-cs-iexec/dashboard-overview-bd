@@ -97,12 +97,17 @@ export type ScanTransfersResult = {
   online: boolean;
 };
 
-export async function scanConfidentialTransfers(limit = 200): Promise<ScanTransfersResult> {
+export async function scanConfidentialTransfers(
+  limit = 200,
+): Promise<ScanTransfersResult> {
   try {
-    const res: ConfidentialTransfersResponse = await client.request(CONFIDENTIAL_TRANSFERS_QUERY, {
-      limit,
-      after: null,
-    });
+    const res: ConfidentialTransfersResponse = await client.request(
+      CONFIDENTIAL_TRANSFERS_QUERY,
+      {
+        limit,
+        after: null,
+      },
+    );
     return { items: res.confidentialTransfers.items, online: true };
   } catch {
     return { items: [], online: false };

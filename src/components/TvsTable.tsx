@@ -55,7 +55,11 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
       ...[...seen.entries()].map(([key, meta]) => {
         const symbol = key.split(":")[0];
         const chainLabel = meta.chainId === 11155111 ? " ETH" : " ARB";
-        return { key, label: `${symbol}${multiChain ? chainLabel : ""}`, accent: meta.accent };
+        return {
+          key,
+          label: `${symbol}${multiChain ? chainLabel : ""}`,
+          accent: meta.accent,
+        };
       }),
     ];
   }, [events]);
@@ -84,67 +88,84 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
 
   return (
     <div className="surface-solid overflow-hidden rounded-2xl">
-        <TokenFilter
-          chips={tokenChips}
-          selected={token}
-          onSelect={(k) => {
-            setToken(k);
-            setPage(1);
-          }}
-        />
-        <Toolbar
-          filter={filter}
-          onFilterChange={(f) => {
-            setFilter(f);
-            setPage(1);
-          }}
-          query={query}
-          onQueryChange={(q) => {
-            setQuery(q);
-            setPage(1);
-          }}
-          count={filtered.length}
-          total={events.length}
-        />
+      <TokenFilter
+        chips={tokenChips}
+        selected={token}
+        onSelect={(k) => {
+          setToken(k);
+          setPage(1);
+        }}
+      />
+      <Toolbar
+        filter={filter}
+        onFilterChange={(f) => {
+          setFilter(f);
+          setPage(1);
+        }}
+        query={query}
+        onQueryChange={(q) => {
+          setQuery(q);
+          setPage(1);
+        }}
+        count={filtered.length}
+        total={events.length}
+      />
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[880px] text-left">
-            <thead>
-              <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-                <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Address</th>
-                <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Type</th>
-                <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">When</th>
-                <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Token</th>
-                <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">
-                  Amount
-                </th>
-                <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">
-                  Tx
-                </th>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[880px] text-left">
+          <thead>
+            <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Address
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Type
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                When
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Token
+              </th>
+              <th
+                scope="col"
+                className="px-5 py-3 text-right font-mono font-normal sm:px-7"
+              >
+                Amount
+              </th>
+              <th
+                scope="col"
+                className="px-5 py-3 text-right font-mono font-normal sm:px-7"
+              >
+                Tx
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-7 py-10 text-center text-[var(--color-muted)]"
+                >
+                  No events match the current filter.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-7 py-10 text-center text-[var(--color-muted)]">
-                    No events match the current filter.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((e) => <Row key={e.id} e={e} />)
-              )}
-            </tbody>
-          </table>
-        </div>
+            ) : (
+              rows.map((e) => <Row key={e.id} e={e} />)
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        <Pagination
-          page={safePage}
-          totalPages={totalPages}
-          count={filtered.length}
-          pageSize={PAGE_SIZE}
-          onPrev={() => setPage(Math.max(1, safePage - 1))}
-          onNext={() => setPage(Math.min(totalPages, safePage + 1))}
-        />
+      <Pagination
+        page={safePage}
+        totalPages={totalPages}
+        count={filtered.length}
+        pageSize={PAGE_SIZE}
+        onPrev={() => setPage(Math.max(1, safePage - 1))}
+        onNext={() => setPage(Math.min(totalPages, safePage + 1))}
+      />
     </div>
   );
 }
@@ -181,8 +202,12 @@ function Row({ e }: { e: TvsEventVM }) {
           >
             {e.confidentialSymbol.replace(/^c/, "")[0]}
           </span>
-          <span className="text-[12px] text-[var(--color-foreground)]/85">{e.symbol}</span>
-          <span className={`inline-flex items-center rounded px-1 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] ${isEth ? "border border-purple-500/30 bg-purple-500/10 text-purple-400" : "border border-blue-500/30 bg-blue-500/10 text-blue-400"}`}>
+          <span className="text-[12px] text-[var(--color-foreground)]/85">
+            {e.symbol}
+          </span>
+          <span
+            className={`inline-flex items-center rounded px-1 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] ${isEth ? "border border-purple-500/30 bg-purple-500/10 text-purple-400" : "border border-blue-500/30 bg-blue-500/10 text-blue-400"}`}
+          >
             {isEth ? "ETH" : "ARB"}
           </span>
         </div>

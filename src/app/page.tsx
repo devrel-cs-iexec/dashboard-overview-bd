@@ -28,10 +28,10 @@ export default async function TvsPage() {
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
         <p className="max-w-3xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
-          Every confidential token shield (ERC-20 → ERC-7984) and unshield event since
-          the protocol&apos;s deploy block. Shield amounts from ERC-20 Transfer logs;
-          unshield amounts from on-chain UnwrapFinalized events (plaintext amount
-          revealed post-finalization).
+          Every confidential token shield (ERC-20 → ERC-7984) and unshield event since the
+          protocol&apos;s deploy block. Shield amounts from ERC-20 Transfer logs; unshield
+          amounts from on-chain UnwrapFinalized events (plaintext amount revealed
+          post-finalization).
         </p>
 
         <div className="mt-6">

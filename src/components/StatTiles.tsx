@@ -19,7 +19,11 @@ export function StatTiles({
   columns?: 2 | 3 | 4;
 }) {
   const lg =
-    columns === 2 ? "lg:grid-cols-2" : columns === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4";
+    columns === 2
+      ? "lg:grid-cols-2"
+      : columns === 3
+        ? "lg:grid-cols-3"
+        : "lg:grid-cols-4";
   return (
     <div
       className={`grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-border)] ${lg}`}

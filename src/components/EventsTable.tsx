@@ -54,7 +54,10 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                 key={c}
                 type="button"
                 aria-pressed={cat === c}
-                onClick={() => { setCat(c); setPage(1); }}
+                onClick={() => {
+                  setCat(c);
+                  setPage(1);
+                }}
                 className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
                   cat === c
                     ? "bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
@@ -71,7 +74,10 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                 key={c}
                 type="button"
                 aria-pressed={chain === c}
-                onClick={() => { setChain(c); setPage(1); }}
+                onClick={() => {
+                  setChain(c);
+                  setPage(1);
+                }}
                 className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
                   chain === c
                     ? "bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
@@ -94,7 +100,10 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
           <input
             type="text"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder="Search op or tx…"
             aria-label="Search events by operation or transaction"
             className="w-full sm:w-48 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1.5 font-mono text-[12px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)]"
@@ -106,18 +115,36 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
         <table className="w-full min-w-[820px] text-left">
           <thead>
             <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Category</th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Public</th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
-              <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Operation
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Chain
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Category
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Public
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Time
+              </th>
+              <th
+                scope="col"
+                className="px-5 py-3 text-right font-mono font-normal sm:px-7"
+              >
+                Tx
+              </th>
             </tr>
           </thead>
           <tbody>
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-7 py-10 text-center text-[var(--color-muted)]">
+                <td
+                  colSpan={6}
+                  className="px-7 py-10 text-center text-[var(--color-muted)]"
+                >
                   No events match the current filter.
                 </td>
               </tr>
@@ -147,9 +174,13 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                   </td>
                   <td className="px-5 py-3 sm:px-7">
                     {r.isPubliclyDecryptable ? (
-                      <span className="font-mono text-[11px] text-[var(--color-positive)]">Yes</span>
+                      <span className="font-mono text-[11px] text-[var(--color-positive)]">
+                        Yes
+                      </span>
                     ) : (
-                      <span className="font-mono text-[11px] text-[var(--color-muted-2)]">—</span>
+                      <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
+                        —
+                      </span>
                     )}
                   </td>
                   <td className="px-5 py-3 font-mono text-[11px] text-[var(--color-muted)] sm:px-7">
@@ -174,22 +205,41 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
 
       <div className="flex flex-col items-start gap-3 border-t border-[var(--color-border)] px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-7">
         <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
-          {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
+          {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–
+          {Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
           {filtered.length.toLocaleString()}
         </span>
         <div className="flex items-center gap-1">
-          <PageBtn onClick={() => setPage(Math.max(1, safePage - 1))} disabled={safePage <= 1}>← Prev</PageBtn>
+          <PageBtn
+            onClick={() => setPage(Math.max(1, safePage - 1))}
+            disabled={safePage <= 1}
+          >
+            ← Prev
+          </PageBtn>
           <span className="px-3 font-mono text-[11px] text-[var(--color-muted)]">
             {safePage} / {totalPages}
           </span>
-          <PageBtn onClick={() => setPage(Math.min(totalPages, safePage + 1))} disabled={safePage >= totalPages}>Next →</PageBtn>
+          <PageBtn
+            onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+            disabled={safePage >= totalPages}
+          >
+            Next →
+          </PageBtn>
         </div>
       </div>
     </div>
   );
 }
 
-function PageBtn({ onClick, disabled, children }: { onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+function PageBtn({
+  onClick,
+  disabled,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}

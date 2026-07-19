@@ -20,10 +20,7 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
       if (chain === "arb" && r.chainId !== 421614) return false;
       if (chain === "eth" && r.chainId !== 11155111) return false;
       if (!q) return true;
-      return (
-        r.account.toLowerCase().includes(q) ||
-        r.grantedBy.toLowerCase().includes(q)
-      );
+      return r.account.toLowerCase().includes(q) || r.grantedBy.toLowerCase().includes(q);
     });
   }, [rows, role, chain, query]);
 
@@ -35,13 +32,20 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
     <div className="surface-solid overflow-hidden rounded-2xl">
       <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
         <div className="flex flex-wrap items-center gap-2">
-          <div role="group" aria-label="Filter by role" className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
+          <div
+            role="group"
+            aria-label="Filter by role"
+            className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1"
+          >
             {(["all", "ADMIN", "VIEWER"] as const).map((r) => (
               <button
                 key={r}
                 type="button"
                 aria-pressed={role === r}
-                onClick={() => { setRole(r); setPage(1); }}
+                onClick={() => {
+                  setRole(r);
+                  setPage(1);
+                }}
                 className={`rounded px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] transition-colors ${
                   role === r
                     ? "bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
@@ -52,13 +56,20 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
               </button>
             ))}
           </div>
-          <div role="group" aria-label="Filter by chain" className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
+          <div
+            role="group"
+            aria-label="Filter by chain"
+            className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1"
+          >
             {(["all", "arb", "eth"] as const).map((c) => (
               <button
                 key={c}
                 type="button"
                 aria-pressed={chain === c}
-                onClick={() => { setChain(c); setPage(1); }}
+                onClick={() => {
+                  setChain(c);
+                  setPage(1);
+                }}
                 className={`rounded px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] transition-colors ${
                   chain === c
                     ? "bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
@@ -81,7 +92,10 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
           <input
             type="text"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder="Search address…"
             aria-label="Search ACL grants by address"
             className="w-full sm:w-48 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1.5 font-mono text-[12px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)]"
@@ -93,17 +107,33 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
         <table className="w-full min-w-[720px] text-left">
           <thead>
             <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Account</th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Role</th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Granted By</th>
-              <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">Time</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Account
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Chain
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Role
+              </th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
+                Granted By
+              </th>
+              <th
+                scope="col"
+                className="px-5 py-3 text-right font-mono font-normal sm:px-7"
+              >
+                Time
+              </th>
             </tr>
           </thead>
           <tbody>
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-7 py-10 text-center text-[var(--color-muted)]">
+                <td
+                  colSpan={5}
+                  className="px-7 py-10 text-center text-[var(--color-muted)]"
+                >
                   No grants match the current filter.
                 </td>
               </tr>
@@ -159,20 +189,41 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
 
       <div className="flex flex-col items-start gap-3 border-t border-[var(--color-border)] px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-7">
         <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
-          {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
+          {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–
+          {Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
           {filtered.length.toLocaleString()}
         </span>
         <div className="flex items-center gap-1">
-          <PageBtn onClick={() => setPage(Math.max(1, safePage - 1))} disabled={safePage <= 1}>← Prev</PageBtn>
-          <span className="px-3 font-mono text-[11px] text-[var(--color-muted)]">{safePage} / {totalPages}</span>
-          <PageBtn onClick={() => setPage(Math.min(totalPages, safePage + 1))} disabled={safePage >= totalPages}>Next →</PageBtn>
+          <PageBtn
+            onClick={() => setPage(Math.max(1, safePage - 1))}
+            disabled={safePage <= 1}
+          >
+            ← Prev
+          </PageBtn>
+          <span className="px-3 font-mono text-[11px] text-[var(--color-muted)]">
+            {safePage} / {totalPages}
+          </span>
+          <PageBtn
+            onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+            disabled={safePage >= totalPages}
+          >
+            Next →
+          </PageBtn>
         </div>
       </div>
     </div>
   );
 }
 
-function PageBtn({ onClick, disabled, children }: { onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+function PageBtn({
+  onClick,
+  disabled,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}

@@ -40,7 +40,9 @@ export type TvsPayload = {
 };
 
 function clientForChain(chainId: number): PublicClient {
-  return chainId === 11155111 ? (ethSepoliaClient as unknown as PublicClient) : (publicClient as unknown as PublicClient);
+  return chainId === 11155111
+    ? (ethSepoliaClient as unknown as PublicClient)
+    : (publicClient as unknown as PublicClient);
 }
 
 // Module-level stale-while-revalidate cache — survives concurrent requests,
@@ -56,21 +58,23 @@ export async function loadTvsEvents(): Promise<TvsPayload> {
   // Coalesce concurrent requests into one in-flight fetch.
   if (tvsFlight) return tvsFlight;
 
-  tvsFlight = loadTvsEventsRaw().then((payload) => {
-    tvsFlight = null;
-    // Only promote to cache if we got real data.
-    if (!payload.partial || payload.events.length > 0) {
-      tvsCache = { ts: Date.now(), payload };
-    }
-    // Fall back to stale cache on total failure rather than showing 0 events.
-    return (payload.partial && payload.events.length === 0 && tvsCache)
-      ? tvsCache.payload
-      : payload;
-  }).catch((err) => {
-    tvsFlight = null;
-    if (tvsCache) return tvsCache.payload;
-    throw err;
-  });
+  tvsFlight = loadTvsEventsRaw()
+    .then((payload) => {
+      tvsFlight = null;
+      // Only promote to cache if we got real data.
+      if (!payload.partial || payload.events.length > 0) {
+        tvsCache = { ts: Date.now(), payload };
+      }
+      // Fall back to stale cache on total failure rather than showing 0 events.
+      return payload.partial && payload.events.length === 0 && tvsCache
+        ? tvsCache.payload
+        : payload;
+    })
+    .catch((err) => {
+      tvsFlight = null;
+      if (tvsCache) return tvsCache.payload;
+      throw err;
+    });
 
   return tvsFlight;
 }
@@ -99,8 +103,14 @@ async function loadTvsEventsRaw(): Promise<TvsPayload> {
   const ethEvents = events.filter((e) => e.chainId === 11155111 && e.timestamp === 0);
 
   const [arbTs, ethTs] = await Promise.all([
-    fetchBlockTimestamps([...new Set(arbEvents.map((e) => e.blockNumber))], publicClient as unknown as PublicClient),
-    fetchBlockTimestamps([...new Set(ethEvents.map((e) => e.blockNumber))], ethSepoliaClient as unknown as PublicClient),
+    fetchBlockTimestamps(
+      [...new Set(arbEvents.map((e) => e.blockNumber))],
+      publicClient as unknown as PublicClient,
+    ),
+    fetchBlockTimestamps(
+      [...new Set(ethEvents.map((e) => e.blockNumber))],
+      ethSepoliaClient as unknown as PublicClient,
+    ),
   ]);
 
   for (const e of arbEvents) e.timestamp = arbTs.get(e.blockNumber) ?? 0;
@@ -231,12 +241,23 @@ const CHUNK_SIZE = 10_000_000n;
 
 async function chunkedGetLogs(
   client: PublicClient,
-  params: { address: `0x${string}`; event: unknown; args?: unknown; fromBlock: bigint; toBlock: bigint },
+  params: {
+    address: `0x${string}`;
+    event: unknown;
+    args?: unknown;
+    fromBlock: bigint;
+    toBlock: bigint;
+  },
 ): Promise<Log[]> {
   const results: Log[] = [];
   for (let from = params.fromBlock; from <= params.toBlock; from += CHUNK_SIZE) {
-    const to = from + CHUNK_SIZE - 1n < params.toBlock ? from + CHUNK_SIZE - 1n : params.toBlock;
-    const chunk = await (client.getLogs as (p: unknown) => Promise<Log[]>)({ ...params, fromBlock: from, toBlock: to });
+    const to =
+      from + CHUNK_SIZE - 1n < params.toBlock ? from + CHUNK_SIZE - 1n : params.toBlock;
+    const chunk = await (client.getLogs as (p: unknown) => Promise<Log[]>)({
+      ...params,
+      fromBlock: from,
+      toBlock: to,
+    });
     results.push(...chunk);
   }
   return results;
@@ -255,9 +276,7 @@ async function fetchBlockTimestamps(
   for (let i = 0; i < blocks.length; i += window) {
     const slice = blocks.slice(i, i + window);
     const results = await Promise.allSettled(
-      slice.map((b) =>
-        client.getBlock({ blockNumber: b, includeTransactions: false }),
-      ),
+      slice.map((b) => client.getBlock({ blockNumber: b, includeTransactions: false })),
     );
     results.forEach((r, idx) => {
       if (r.status === "fulfilled") {

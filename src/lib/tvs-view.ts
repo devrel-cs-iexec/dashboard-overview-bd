@@ -1,11 +1,6 @@
 import type { TvsEventVM } from "@/components/TvsTable";
 import type { TvsEvent } from "./tvs";
-import {
-  formatTokenAmount,
-  formatUsd,
-  relativeTime,
-  shortAddress,
-} from "./format";
+import { formatTokenAmount, formatUsd, relativeTime, shortAddress } from "./format";
 
 /**
  * Maps a domain TVS event to the serialisable shape TvsTable renders. Lives
