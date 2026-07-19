@@ -326,7 +326,8 @@ function Toolbar({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Search address, tx, token…"
-          className="w-56 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1.5 font-mono text-[12px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)] focus:outline-none"
+          aria-label="Search shield and unshield events"
+          className="w-full sm:w-56 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1.5 font-mono text-[12px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)]"
         />
       </div>
     </div>
@@ -376,7 +377,7 @@ function Pagination({
   const start = count === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(count, page * pageSize);
   return (
-    <div className="flex items-center justify-between border-t border-[var(--color-border)] px-5 py-3 sm:px-7">
+    <div className="flex flex-col items-start gap-3 border-t border-[var(--color-border)] px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-7">
       <div className="font-mono text-[11px] text-[var(--color-muted-2)]">
         Showing {start.toLocaleString()} to {end.toLocaleString()} of{" "}
         {count.toLocaleString()} events

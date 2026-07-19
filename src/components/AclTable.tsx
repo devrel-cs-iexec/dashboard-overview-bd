@@ -70,8 +70,12 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
+        <div className="flex flex-wrap items-center gap-3">
+          <span
+            role="status"
+            aria-live="polite"
+            className="font-mono text-[11px] text-[var(--color-muted-2)]"
+          >
             {filtered.length.toLocaleString()} / {rows.length.toLocaleString()}
           </span>
           <input
@@ -79,7 +83,8 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
             value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(1); }}
             placeholder="Search address…"
-            className="w-48 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1.5 font-mono text-[12px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)] focus:outline-none"
+            aria-label="Search ACL grants by address"
+            className="w-full sm:w-48 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1.5 font-mono text-[12px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)]"
           />
         </div>
       </div>
@@ -152,7 +157,7 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
         </table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-[var(--color-border)] px-5 py-3 sm:px-7">
+      <div className="flex flex-col items-start gap-3 border-t border-[var(--color-border)] px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-7">
         <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
           {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
           {filtered.length.toLocaleString()}
