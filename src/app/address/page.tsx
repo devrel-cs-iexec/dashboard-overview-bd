@@ -61,14 +61,15 @@ export default async function AddressPage({
                     <div className="border-b border-[var(--color-border)] px-5 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)] sm:px-7">
                       ACL grants · {roles.length}
                     </div>
-                    <table className="w-full text-left">
+                    <div className="overflow-x-auto">
+                <table className="w-full min-w-[780px] text-left">
                       <thead>
                         <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Account</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Role</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Granted By</th>
-                          <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Time</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Account</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Role</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Granted By</th>
+                          <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">Time</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -95,6 +96,7 @@ export default async function AddressPage({
                         ))}
                       </tbody>
                     </table>
+              </div>
                   </div>
                 )}
 
@@ -104,15 +106,16 @@ export default async function AddressPage({
                     <div className="border-b border-[var(--color-border)] px-5 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)] sm:px-7">
                       Shield / Unshield events · {tvsEvents.length}
                     </div>
-                    <table className="w-full text-left">
+                    <div className="overflow-x-auto">
+                <table className="w-full min-w-[780px] text-left">
                       <thead>
                         <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Direction</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Amount</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Token</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
-                          <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Direction</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Amount</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Token</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
+                          <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -143,6 +146,7 @@ export default async function AddressPage({
                         ))}
                       </tbody>
                     </table>
+              </div>
                   </div>
                 )}
 

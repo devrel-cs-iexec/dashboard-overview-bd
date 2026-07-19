@@ -108,17 +108,17 @@ export function TvsTable({ events }: { events: TvsEventVM[] }) {
         />
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full min-w-[880px] text-left">
             <thead>
               <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-                <th className="px-5 py-3 font-mono font-normal sm:px-7">Address</th>
-                <th className="px-5 py-3 font-mono font-normal sm:px-7">Type</th>
-                <th className="px-5 py-3 font-mono font-normal sm:px-7">When</th>
-                <th className="px-5 py-3 font-mono font-normal sm:px-7">Token</th>
-                <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">
+                <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Address</th>
+                <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Type</th>
+                <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">When</th>
+                <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Token</th>
+                <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">
                   Amount
                 </th>
-                <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">
+                <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">
                   Tx
                 </th>
               </tr>
@@ -225,6 +225,8 @@ function TokenFilter({
         return (
           <button
             key={chip.key}
+            type="button"
+            aria-pressed={selected === chip.key}
             onClick={() => onSelect(chip.key)}
             className={`group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all ${
               isActive
@@ -342,6 +344,8 @@ function ToolbarButton({
 }) {
   return (
     <button
+      type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={`rounded px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] transition-colors ${
         active

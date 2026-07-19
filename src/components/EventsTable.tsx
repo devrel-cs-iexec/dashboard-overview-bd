@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { HandleRow } from "@/lib/subgraph";
-import { opCategory, type OpCategory } from "@/lib/nox";
+import { CAT_COLOR, type OpCategory } from "@/lib/nox";
 import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
 import { ChainBadge } from "./ChainBadge";
 
@@ -17,15 +17,6 @@ const CATEGORIES: (OpCategory | "other" | "all")[] = [
   "acl",
   "other",
 ];
-
-const CATEGORY_COLOR: Record<OpCategory | "other", string> = {
-  arithmetic: "var(--color-accent)",
-  comparison: "#a78bfa",
-  token: "var(--color-positive)",
-  control: "#fb923c",
-  acl: "#38bdf8",
-  other: "var(--color-muted)",
-};
 
 const PAGE_SIZE = 25;
 
@@ -61,6 +52,8 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
             {CATEGORIES.map((c) => (
               <button
                 key={c}
+                type="button"
+                aria-pressed={cat === c}
                 onClick={() => { setCat(c); setPage(1); }}
                 className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
                   cat === c
@@ -76,6 +69,8 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
             {(["all", "arb", "eth"] as const).map((c) => (
               <button
                 key={c}
+                type="button"
+                aria-pressed={chain === c}
                 onClick={() => { setChain(c); setPage(1); }}
                 className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
                   chain === c
@@ -103,15 +98,15 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left">
+        <table className="w-full min-w-[820px] text-left">
           <thead>
             <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-              <th className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
-              <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
-              <th className="px-5 py-3 font-mono font-normal sm:px-7">Category</th>
-              <th className="px-5 py-3 font-mono font-normal sm:px-7">Public</th>
-              <th className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
-              <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Category</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Public</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
+              <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
             </tr>
           </thead>
           <tbody>
@@ -137,9 +132,9 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                     <span
                       className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em]"
                       style={{
-                        color: CATEGORY_COLOR[r.category],
-                        borderColor: `${CATEGORY_COLOR[r.category]}40`,
-                        backgroundColor: `${CATEGORY_COLOR[r.category]}12`,
+                        color: CAT_COLOR[r.category],
+                        borderColor: `${CAT_COLOR[r.category]}40`,
+                        backgroundColor: `${CAT_COLOR[r.category]}12`,
                       }}
                     >
                       {r.category}
@@ -174,7 +169,7 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
 
       <div className="flex items-center justify-between border-t border-[var(--color-border)] px-5 py-3 sm:px-7">
         <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
-          {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
+          {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
           {filtered.length.toLocaleString()}
         </span>
         <div className="flex items-center gap-1">

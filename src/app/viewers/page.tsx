@@ -39,14 +39,14 @@ export default async function ViewersPage() {
                 {publicHandles.length.toLocaleString()} public handles
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full min-w-[720px] text-left">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Handle ID</th>
-                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
-                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
-                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
-                      <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
+                      <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Handle ID</th>
+                      <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
+                      <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
+                      <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
+                      <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
                     </tr>
                   </thead>
                   <tbody>

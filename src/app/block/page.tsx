@@ -108,14 +108,15 @@ export default async function BlockPage({
                 <div className="border-b border-[var(--color-border)] px-5 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)] sm:px-7">
                   {handles.length} handle{handles.length !== 1 ? "s" : ""} in block #{blockNum!.toLocaleString()}
                 </div>
-                <table className="w-full text-left">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Handle ID</th>
-                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
-                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Category</th>
-                      <th className="px-5 py-3 font-mono font-normal sm:px-7">Public</th>
-                      <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
+                      <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Handle ID</th>
+                      <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Operation</th>
+                      <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Category</th>
+                      <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Public</th>
+                      <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -154,6 +155,7 @@ export default async function BlockPage({
                     })}
                   </tbody>
                 </table>
+              </div>
               </div>
             )}
 

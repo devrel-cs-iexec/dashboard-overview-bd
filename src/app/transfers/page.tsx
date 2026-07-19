@@ -81,16 +81,16 @@ export default async function TransfersPage() {
 
                 <div className="surface-solid overflow-hidden rounded-2xl">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full min-w-[860px] text-left">
                       <thead>
                         <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Type</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">From</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">To</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Token</th>
-                          <th className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
-                          <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Type</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">From</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">To</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Token</th>
+                          <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Time</th>
+                          <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">Tx</th>
                         </tr>
                       </thead>
                       <tbody>

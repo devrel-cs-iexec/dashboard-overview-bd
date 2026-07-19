@@ -35,10 +35,12 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
     <div className="surface-solid overflow-hidden rounded-2xl">
       <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
+          <div role="group" aria-label="Filter by role" className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
             {(["all", "ADMIN", "VIEWER"] as const).map((r) => (
               <button
                 key={r}
+                type="button"
+                aria-pressed={role === r}
                 onClick={() => { setRole(r); setPage(1); }}
                 className={`rounded px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] transition-colors ${
                   role === r
@@ -50,10 +52,12 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
+          <div role="group" aria-label="Filter by chain" className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
             {(["all", "arb", "eth"] as const).map((c) => (
               <button
                 key={c}
+                type="button"
+                aria-pressed={chain === c}
                 onClick={() => { setChain(c); setPage(1); }}
                 className={`rounded px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] transition-colors ${
                   chain === c
@@ -81,14 +85,14 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left">
+        <table className="w-full min-w-[720px] text-left">
           <thead>
             <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-              <th className="px-5 py-3 font-mono font-normal sm:px-7">Account</th>
-              <th className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
-              <th className="px-5 py-3 font-mono font-normal sm:px-7">Role</th>
-              <th className="px-5 py-3 font-mono font-normal sm:px-7">Granted By</th>
-              <th className="px-5 py-3 text-right font-mono font-normal sm:px-7">Time</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Account</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Chain</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Role</th>
+              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">Granted By</th>
+              <th scope="col" className="px-5 py-3 text-right font-mono font-normal sm:px-7">Time</th>
             </tr>
           </thead>
           <tbody>
@@ -150,7 +154,7 @@ export function AclTable({ rows }: { rows: HandleRoleRow[] }) {
 
       <div className="flex items-center justify-between border-t border-[var(--color-border)] px-5 py-3 sm:px-7">
         <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
-          {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
+          {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
           {filtered.length.toLocaleString()}
         </span>
         <div className="flex items-center gap-1">
