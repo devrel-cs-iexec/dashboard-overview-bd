@@ -142,6 +142,46 @@ function handleGraphql(body) {
   return { data: {} };
 }
 
+/** keccak256("Transfer(address,address,uint256)") */
+const TRANSFER_TOPIC =
+  "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+
+/**
+ * Synthesises shield events (ERC-20 Transfer into a wrapper) that actually
+ * match the query.
+ *
+ * A real node only returns logs matching the requested address and topics, and
+ * viem discards any that do not — so echoing the caller's own filter back is
+ * both more faithful and the only way the decoded logs survive.
+ */
+function logsFor(params) {
+  const topics = params.topics ?? [];
+  if (topics[0] !== TRANSFER_TOPIC) return [];
+
+  // Only the chunk covering the seeded range carries events, so the range
+  // arithmetic is still exercised by the empty chunks either side.
+  const from = BigInt(params.fromBlock ?? "0x0");
+  if (from > 251_000_000n) return [];
+
+  const toTopic = topics[2] ?? `0x${"0".repeat(24)}${addr(0x1ccec).slice(2)}`;
+
+  return Array.from({ length: 30 }, (_, i) => ({
+    address: params.address ?? addr(0x9923),
+    topics: [
+      TRANSFER_TOPIC,
+      `0x${"0".repeat(24)}${addr(0xa100 + (i % 6)).slice(2)}`,
+      toTopic,
+    ],
+    data: hex(BigInt(1000 + i) * 10n ** 6n),
+    blockNumber: hex(251_000_000 + i, 8),
+    blockHash: hex(0x9000 + i),
+    transactionHash: hex(0x7000 + i),
+    transactionIndex: "0x0",
+    logIndex: hex(i, 2),
+    removed: false,
+  }));
+}
+
 function handleRpc(body) {
   const reply = (result) => ({ jsonrpc: "2.0", id: body.id, result });
 
@@ -162,9 +202,7 @@ function handleRpc(body) {
       // covers inferredTotalSupply() and underlying().
       return reply(hex(1_000_000n * 10n ** 6n));
     case "eth_getLogs":
-      // Empty on purpose: the point is to keep the multi-million-block
-      // historical scan out of the test server, not to reproduce it.
-      return reply([]);
+      return reply(logsFor(body.params?.[0] ?? {}));
     default:
       return reply(null);
   }

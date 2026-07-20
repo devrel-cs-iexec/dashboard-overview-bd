@@ -1,16 +1,29 @@
-import { TvsTable, type TvsEventVM } from "@/components/TvsTable";
+import { TvsTable, TVS_PAGE_SIZE, type TvsEventVM } from "@/components/TvsTable";
 import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { loadTvsEvents } from "@/lib/tvs";
-import { toTvsEventVM } from "@/lib/tvs-view";
+import { toTvsEventVM, filterTvsEvents, tvsTokenOptions } from "@/lib/tvs-view";
+import { param, paginate, type SearchParams } from "@/lib/table";
 import { formatUsd } from "@/lib/format";
 
 export const revalidate = 60;
 
-export default async function TvsPage() {
+export default async function TvsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const sp = await searchParams;
   const payload = await loadTvsEvents();
 
   const events: TvsEventVM[] = payload.events.map(toTvsEventVM);
+
+  const visible = filterTvsEvents(events, {
+    token: param(sp, "token"),
+    dir: param(sp, "dir"),
+    q: param(sp, "q"),
+  });
+  const paged = paginate(visible, param(sp, "page"), TVS_PAGE_SIZE);
 
   const shieldCount = events.filter((e) => e.direction === "shield").length;
   const unshieldCount = events.filter((e) => e.direction === "unshield").length;
@@ -66,7 +79,18 @@ export default async function TvsPage() {
         </div>
 
         <div className="mt-8">
-          <TvsTable events={events} />
+          <TvsTable
+            pathname="/"
+            searchParams={sp}
+            rows={paged.rows}
+            tokenOptions={tvsTokenOptions(events)}
+            page={paged.page}
+            totalPages={paged.totalPages}
+            filtered={paged.filtered}
+            total={events.length}
+            from={paged.from}
+            to={paged.to}
+          />
         </div>
       </main>
     </>

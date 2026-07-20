@@ -62,8 +62,8 @@ src/
     StatTiles.tsx      the KPI grid
     SearchForm.tsx     labelled lookup form
     TableControls.tsx  FilterLinks / TableSearch / TablePagination
-    TvsTable.tsx       client, filters in useState
-    EventsTable.tsx  AclTable.tsx   server, filters in searchParams
+    TvsTable.tsx  EventsTable.tsx  AclTable.tsx
+                       server components; filters live in searchParams
   lib/
     nav.ts             navigation, single source of truth
     nox.ts             chains, contracts, token registry, op categories
@@ -117,14 +117,13 @@ landmark naming, heading order).
 
 ## Known limitations
 
-- **`loadTvsEvents` is too heavy to run per request.** It scans from each token's
-  deploy block to head over RPC on a cold cache. That is why `/` and `/wraps` stay on
-  ISR while `/events` and `/acl` read filters from `searchParams` — reading
-  searchParams makes a route dynamic, which moves that scan onto every request and
-  takes the server down. The fix is to serve these events from the indexer, which
-  already stores the block numbers and timestamps this scan re-derives over RPC.
-- Because of the above, the TVS tables still filter client-side, so `/` and `/wraps`
-  serialize the full event set (~315KB). `/events` and `/acl` do not.
+- **`loadTvsEvents` scans from each token's deploy block to head over RPC.** Measured
+  cold: ~6.4s, ~100 logs, ~98MB RSS. A module-level SWR cache means only a cold request
+  pays, and a stale response is served while it refreshes. The real fix is to read these
+  events from the indexer, which already stores the block numbers and timestamps this
+  scan re-derives — that would remove the RPC scan entirely.
+- The per-block `eth_getBlockByNumber` backfill is the larger half of that cost (~2.5s of
+  the 6.4s). It exists only to turn block numbers into timestamps; the indexer has them.
 - `scanHandles` and `scanRoles` cap at 12k / 8k rows. Truncation is now surfaced in the
   UI, but the cap itself remains.
 - `lib/tvs.ts` keeps a module-level cache. It is per-process, so on a multi-instance
@@ -136,5 +135,4 @@ landmark naming, heading order).
 - Historical TVL/TVS chart
 - Vault analytics on `ConfidentialERC7540Factory`
 - Per-operator drilldown pages
-- Serve shield/unshield events from the indexer, which would remove the RPC log scan
-  and let `/` and `/wraps` filter server-side like the other tables
+- Serve shield/unshield events from the indexer, removing the RPC log scan entirely

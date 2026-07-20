@@ -132,3 +132,40 @@ test.describe("table accessibility", () => {
     expect(tableWidth).toBeGreaterThanOrEqual(minWidth - 1);
   });
 });
+
+test.describe("TVS table", () => {
+  test("direction filter is URL-driven and shareable", async ({ page }) => {
+    await page.goto("/");
+    await page
+      .getByRole("group", { name: "Filter by direction" })
+      .getByRole("link", { name: "Shield", exact: true })
+      .click();
+
+    await expect(page).toHaveURL(/[?&]dir=shield/);
+    await expect(
+      page
+        .getByRole("group", { name: "Filter by direction" })
+        .locator('[aria-current="true"]'),
+    ).toHaveText(/Shield/i);
+  });
+
+  test("/ and /wraps read the same query string identically", async ({ page }) => {
+    const counts: string[] = [];
+    for (const path of ["/", "/wraps"]) {
+      await page.goto(`${path}?dir=unshield`);
+      counts.push(
+        await page.getByRole("status").filter({ hasText: "/" }).first().innerText(),
+      );
+    }
+    // Both pages share filterTvsEvents, so the filtered/total counter must agree.
+    expect(counts[0]).toBe(counts[1]);
+  });
+
+  test("only one page of rows is sent, not the whole history", async ({ request }) => {
+    const res = await request.get("/");
+    const html = await res.text();
+    const rows = html.match(/aria-label="View transaction/g)?.length ?? 0;
+    // TVS_PAGE_SIZE is 20; the client version used to serialise every event.
+    expect(rows).toBeLessThanOrEqual(20);
+  });
+});
