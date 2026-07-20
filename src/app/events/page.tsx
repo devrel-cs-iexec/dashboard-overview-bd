@@ -1,4 +1,6 @@
-import { EventsTable, type EventRow } from "@/components/EventsTable";
+import { EventsTable, EVENTS_PAGE_SIZE, type EventRow } from "@/components/EventsTable";
+import { param, paginate, matchesQuery, type SearchParams } from "@/lib/table";
+import { ARB_SEPOLIA_ID, ETH_SEPOLIA_ID } from "@/lib/nox";
 import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { scanHandles } from "@/lib/subgraph";
@@ -7,7 +9,12 @@ import { opCategory } from "@/lib/nox";
 export const metadata = { title: "Nox Events" };
 export const revalidate = 60;
 
-export default async function EventsPage() {
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const sp = await searchParams;
   const { items: handles, complete } = await scanHandles({
     pageSize: 1000,
     maxPages: 12,
@@ -19,6 +26,19 @@ export default async function EventsPage() {
   }));
 
   const publicCount = rows.filter((r) => r.isPubliclyDecryptable).length;
+
+  const cat = param(sp, "cat");
+  const chain = param(sp, "chain");
+  const q = param(sp, "q");
+  const wantChain =
+    chain === "arb" ? ARB_SEPOLIA_ID : chain === "eth" ? ETH_SEPOLIA_ID : undefined;
+
+  const visible = rows.filter((r) => {
+    if (cat && r.category !== cat) return false;
+    if (wantChain !== undefined && r.chainId !== wantChain) return false;
+    return matchesQuery(q, r.operator, r.transactionHash);
+  });
+  const paged = paginate(visible, param(sp, "page"), EVENTS_PAGE_SIZE);
 
   return (
     <>
@@ -59,7 +79,17 @@ export default async function EventsPage() {
           />
         </div>
 
-        <EventsTable rows={rows} />
+        <EventsTable
+          pathname="/events"
+          searchParams={sp}
+          rows={paged.rows}
+          page={paged.page}
+          totalPages={paged.totalPages}
+          filtered={paged.filtered}
+          total={rows.length}
+          from={paged.from}
+          to={paged.to}
+        />
       </main>
     </>
   );

@@ -1,4 +1,6 @@
-import { AclTable } from "@/components/AclTable";
+import { AclTable, ACL_PAGE_SIZE } from "@/components/AclTable";
+import { param, paginate, matchesQuery, type SearchParams } from "@/lib/table";
+import { ARB_SEPOLIA_ID, ETH_SEPOLIA_ID } from "@/lib/nox";
 import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { scanRoles } from "@/lib/subgraph";
@@ -6,8 +8,26 @@ import { scanRoles } from "@/lib/subgraph";
 export const metadata = { title: "ACL Audit" };
 export const revalidate = 60;
 
-export default async function AclPage() {
+export default async function AclPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const sp = await searchParams;
   const { items: roles, complete } = await scanRoles({ pageSize: 1000, maxPages: 10 });
+
+  const role = param(sp, "role");
+  const chain = param(sp, "chain");
+  const q = param(sp, "q");
+  const wantChain =
+    chain === "arb" ? ARB_SEPOLIA_ID : chain === "eth" ? ETH_SEPOLIA_ID : undefined;
+
+  const visible = roles.filter((r) => {
+    if (role && r.role !== role) return false;
+    if (wantChain !== undefined && r.chainId !== wantChain) return false;
+    return matchesQuery(q, r.account, r.grantedBy);
+  });
+  const paged = paginate(visible, param(sp, "page"), ACL_PAGE_SIZE);
 
   const admins = new Set(
     roles.filter((r) => r.role === "ADMIN").map((r) => r.account.toLowerCase()),
@@ -57,7 +77,17 @@ export default async function AclPage() {
           />
         </div>
 
-        <AclTable rows={roles} />
+        <AclTable
+          pathname="/acl"
+          searchParams={sp}
+          rows={paged.rows}
+          page={paged.page}
+          totalPages={paged.totalPages}
+          filtered={paged.filtered}
+          total={roles.length}
+          from={paged.from}
+          to={paged.to}
+        />
       </main>
     </>
   );

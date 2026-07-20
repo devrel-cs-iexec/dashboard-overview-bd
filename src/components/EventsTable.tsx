@@ -1,136 +1,107 @@
-"use client";
-
-import { useState, useMemo } from "react";
-import { ExplorerLink } from "@/components/ExplorerLink";
 import type { HandleRow } from "@/lib/subgraph";
 import { CAT_COLOR, type OpCategory } from "@/lib/nox";
 import { relativeTime } from "@/lib/format";
 import { ChainBadge } from "./ChainBadge";
+import { ExplorerLink } from "@/components/ExplorerLink";
+import type { SearchParams } from "@/lib/table";
+import {
+  FilterLinks,
+  TableSearch,
+  TablePagination,
+  type FilterOption,
+} from "@/components/TableControls";
 
 export type EventRow = HandleRow & { category: OpCategory | "other" };
 
-const CATEGORIES: (OpCategory | "other" | "all")[] = [
-  "all",
-  "arithmetic",
-  "comparison",
-  "token",
-  "control",
-  "acl",
-  "other",
+export const EVENTS_PAGE_SIZE = 25;
+
+export const CATEGORY_OPTIONS: FilterOption[] = [
+  { value: undefined, label: "All" },
+  { value: "arithmetic", label: "Arithmetic", accent: CAT_COLOR.arithmetic },
+  { value: "comparison", label: "Comparison", accent: CAT_COLOR.comparison },
+  { value: "token", label: "Token", accent: CAT_COLOR.token },
+  { value: "control", label: "Control", accent: CAT_COLOR.control },
+  { value: "acl", label: "ACL", accent: CAT_COLOR.acl },
+  { value: "other", label: "Other", accent: CAT_COLOR.other },
 ];
 
-const PAGE_SIZE = 25;
+export const CHAIN_OPTIONS: FilterOption[] = [
+  { value: undefined, label: "All chains" },
+  { value: "arb", label: "ARB" },
+  { value: "eth", label: "ETH" },
+];
 
-export function EventsTable({ rows }: { rows: EventRow[] }) {
-  const [cat, setCat] = useState<OpCategory | "other" | "all">("all");
-  const [chain, setChain] = useState<"all" | "arb" | "eth">("all");
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (cat !== "all" && r.category !== cat) return false;
-      if (chain === "arb" && r.chainId !== 421614) return false;
-      if (chain === "eth" && r.chainId !== 11155111) return false;
-      if (!q) return true;
-      return (
-        r.operator.toLowerCase().includes(q) ||
-        r.transactionHash.toLowerCase().includes(q)
-      );
-    });
-  }, [rows, cat, chain, query]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+/** Server component: renders one page of already-filtered rows. */
+export function EventsTable({
+  pathname,
+  searchParams,
+  rows,
+  page,
+  totalPages,
+  filtered,
+  total,
+  from,
+  to,
+}: {
+  pathname: string;
+  searchParams: SearchParams;
+  rows: EventRow[];
+  page: number;
+  totalPages: number;
+  filtered: number;
+  total: number;
+  from: number;
+  to: number;
+}) {
+  const asString = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
   return (
     <div className="surface-solid overflow-hidden rounded-2xl">
       <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-pressed={cat === c}
-                onClick={() => {
-                  setCat(c);
-                  setPage(1);
-                }}
-                className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
-                  cat === c
-                    ? "bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
-                    : "text-[var(--color-muted)] hover:text-white"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 p-1">
-            {(["all", "arb", "eth"] as const).map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-pressed={chain === c}
-                onClick={() => {
-                  setChain(c);
-                  setPage(1);
-                }}
-                className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
-                  chain === c
-                    ? "bg-[var(--color-accent-dim)] text-[var(--color-accent-soft)]"
-                    : "text-[var(--color-muted)] hover:text-white"
-                }`}
-              >
-                {c === "all" ? "All chains" : c}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <span
-            role="status"
-            aria-live="polite"
-            className="font-mono text-[11px] text-[var(--color-muted-2)]"
-          >
-            {filtered.length.toLocaleString()} / {rows.length.toLocaleString()}
-          </span>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search op or tx…"
-            aria-label="Search events by operation or transaction"
-            className="w-full sm:w-48 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1.5 font-mono text-[12px] text-white placeholder:text-[var(--color-muted-2)] focus:border-[var(--color-accent)]"
+          <FilterLinks
+            pathname={pathname}
+            searchParams={searchParams}
+            name="cat"
+            label="Filter by category"
+            options={CATEGORY_OPTIONS}
+            active={asString(searchParams.cat)}
+          />
+          <FilterLinks
+            pathname={pathname}
+            searchParams={searchParams}
+            name="chain"
+            label="Filter by chain"
+            options={CHAIN_OPTIONS}
+            active={asString(searchParams.chain)}
           />
         </div>
+        <TableSearch
+          pathname={pathname}
+          searchParams={searchParams}
+          label="Search events by operation or transaction"
+          placeholder="Search op or tx…"
+          filtered={filtered}
+          total={total}
+        />
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-left">
+          <caption className="visually-hidden">
+            Compute operations recorded on-chain
+          </caption>
           <thead>
             <tr className="border-b border-[var(--color-border)] text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted-2)]">
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
-                Operation
-              </th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
-                Chain
-              </th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
-                Category
-              </th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
-                Public
-              </th>
-              <th scope="col" className="px-5 py-3 font-mono font-normal sm:px-7">
-                Time
-              </th>
+              {["Operation", "Chain", "Category", "Public", "Time"].map((h) => (
+                <th
+                  key={h}
+                  scope="col"
+                  className="px-5 py-3 font-mono font-normal sm:px-7"
+                >
+                  {h}
+                </th>
+              ))}
               <th
                 scope="col"
                 className="px-5 py-3 text-right font-mono font-normal sm:px-7"
@@ -140,7 +111,7 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {visible.length === 0 ? (
+            {rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={6}
@@ -150,7 +121,7 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                 </td>
               </tr>
             ) : (
-              visible.map((r) => (
+              rows.map((r) => (
                 <tr
                   key={r.id}
                   className="border-b border-[var(--color-border)]/60 transition-colors last:border-0 hover:bg-white/[0.02]"
@@ -180,7 +151,7 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                       </span>
                     ) : (
                       <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
-                        —
+                        No
                       </span>
                     )}
                   </td>
@@ -192,7 +163,7 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                       chainId={r.chainId}
                       kind="tx"
                       value={r.transactionHash}
-                      className="font-mono text-[12px] text-[var(--color-muted)] transition-colors hover:text-[var(--color-accent)]"
+                      className="focus-ring font-mono text-[12px] text-[var(--color-muted)] transition-colors hover:text-[var(--color-accent)]"
                     />
                   </td>
                 </tr>
@@ -202,50 +173,16 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
         </table>
       </div>
 
-      <div className="flex flex-col items-start gap-3 border-t border-[var(--color-border)] px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-        <span className="font-mono text-[11px] text-[var(--color-muted-2)]">
-          {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–
-          {Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
-          {filtered.length.toLocaleString()}
-        </span>
-        <div className="flex items-center gap-1">
-          <PageBtn
-            onClick={() => setPage(Math.max(1, safePage - 1))}
-            disabled={safePage <= 1}
-          >
-            ← Prev
-          </PageBtn>
-          <span className="px-3 font-mono text-[11px] text-[var(--color-muted)]">
-            {safePage} / {totalPages}
-          </span>
-          <PageBtn
-            onClick={() => setPage(Math.min(totalPages, safePage + 1))}
-            disabled={safePage >= totalPages}
-          >
-            Next →
-          </PageBtn>
-        </div>
-      </div>
+      <TablePagination
+        pathname={pathname}
+        searchParams={searchParams}
+        page={page}
+        totalPages={totalPages}
+        from={from}
+        to={to}
+        filtered={filtered}
+        noun="events"
+      />
     </div>
-  );
-}
-
-function PageBtn({
-  onClick,
-  disabled,
-  children,
-}: {
-  onClick: () => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="rounded border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-2.5 py-1 font-mono text-[11px] text-[var(--color-muted)] transition-colors enabled:hover:border-[var(--color-border-strong)] enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-    >
-      {children}
-    </button>
   );
 }
