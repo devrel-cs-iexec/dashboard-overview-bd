@@ -41,38 +41,66 @@ export type TvsPayload = {
   prices: Prices;
 };
 
-// Module-level stale-while-revalidate cache — survives concurrent requests,
-// prevents RPC hammering, and serves last-known-good data on transient failures.
+/**
+ * Module-level cache for the full historical scan.
+ *
+ * Per-process, so on a multi-instance deploy each instance keeps its own copy
+ * and users may see slightly different `partial` states.
+ */
 const TVS_TTL_MS = 60_000;
-let tvsCache: { ts: number; payload: TvsPayload } | null = null;
+
+/** How long a stale payload may still be served while a refresh runs behind it. */
+const TVS_MAX_STALE_MS = 10 * 60_000;
+
+type CacheEntry = { ts: number; payload: TvsPayload };
+let tvsCache: CacheEntry | null = null;
 let tvsFlight: Promise<TvsPayload> | null = null;
 
-export async function loadTvsEvents(): Promise<TvsPayload> {
-  // Serve cache if still fresh.
-  if (tvsCache && Date.now() - tvsCache.ts < TVS_TTL_MS) return tvsCache.payload;
-
-  // Coalesce concurrent requests into one in-flight fetch.
+/** Runs the scan, coalescing concurrent callers onto one in-flight request. */
+function refreshTvs(): Promise<TvsPayload> {
   if (tvsFlight) return tvsFlight;
 
-  tvsFlight = loadTvsEventsRaw()
+  const flight = loadTvsEventsRaw()
     .then((payload) => {
-      tvsFlight = null;
-      // Only promote to cache if we got real data.
-      if (!payload.partial || payload.events.length > 0) {
-        tvsCache = { ts: Date.now(), payload };
-      }
-      // Fall back to stale cache on total failure rather than showing 0 events.
-      return payload.partial && payload.events.length === 0 && tvsCache
-        ? tvsCache.payload
-        : payload;
+      const previous = tvsCache;
+
+      // A partial payload is a lower bound. Caching it over a complete one
+      // would freeze under-counted totals in for the whole TTL, so a degraded
+      // run is allowed to serve but not to overwrite better data.
+      const degrades = payload.partial && previous != null && !previous.payload.partial;
+      const useless = payload.partial && payload.events.length === 0;
+
+      if (!degrades && !useless) tvsCache = { ts: Date.now(), payload };
+      return tvsCache?.payload ?? payload;
     })
-    .catch((err) => {
-      tvsFlight = null;
-      if (tvsCache) return tvsCache.payload;
-      throw err;
+    .finally(() => {
+      if (tvsFlight === flight) tvsFlight = null;
     });
 
-  return tvsFlight;
+  tvsFlight = flight;
+  return flight;
+}
+
+export async function loadTvsEvents(): Promise<TvsPayload> {
+  const now = Date.now();
+
+  if (tvsCache && now - tvsCache.ts < TVS_TTL_MS) return tvsCache.payload;
+
+  // Stale but still usable: answer immediately and refresh behind it. Without
+  // this the cache was a plain blocking TTL despite its name — every 60s, one
+  // unlucky request paid for the entire multi-token historical scan.
+  if (tvsCache && now - tvsCache.ts < TVS_MAX_STALE_MS) {
+    void refreshTvs().catch(() => {});
+    return tvsCache.payload;
+  }
+
+  try {
+    return await refreshTvs();
+  } catch (err) {
+    // Cold cache and a failed scan: nothing to serve.
+    if (tvsCache) return tvsCache.payload;
+    throw err;
+  }
 }
 
 /**
