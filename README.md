@@ -61,7 +61,9 @@ src/
     PageHeader.tsx     header strip + Live/Warn pills
     StatTiles.tsx      the KPI grid
     SearchForm.tsx     labelled lookup form
-    TvsTable.tsx  EventsTable.tsx  AclTable.tsx   (client, filtered + paginated)
+    TableControls.tsx  FilterLinks / TableSearch / TablePagination
+    TvsTable.tsx       client, filters in useState
+    EventsTable.tsx  AclTable.tsx   server, filters in searchParams
   lib/
     nav.ts             navigation, single source of truth
     nox.ts             chains, contracts, token registry, op categories
@@ -70,6 +72,8 @@ src/
     ponder.ts          confidential-transfer queries
     tvs.ts             loadTvsEvents() — shield/unshield scan + cache
     data.ts            loadDashboard() — fans out, aggregates, normalizes
+    table.ts           searchParams parsing, href building, pagination
+    rpc.ts             chunked getLogs, chain selection, bounded concurrency
     format.ts          number / token / address / time helpers
 ```
 
@@ -88,23 +92,49 @@ background while the tab is visible.
 ```bash
 pnpm build && pnpm start   # production
 pnpm lint
+pnpm format
 ```
+
+## Tests
+
+```bash
+pnpm test:e2e                      # all projects
+pnpm test:e2e -- --project=desktop # one project
+```
+
+`e2e/run.mjs` starts `e2e/mock-backend.mjs`, builds against it, then runs
+Playwright against that build. The mock stands in for both the Ponder indexer
+and the Sepolia RPC endpoints, so the suite is offline, deterministic, and can
+assert on table contents — and it keeps the historical `eth_getLogs` scan out of
+the test server. The build runs against the mock too, since the static routes
+are prerendered.
+
+Covered: every route and its heading, the `/tvs` redirect, the 404, sidebar and
+mobile-drawer navigation, URL-driven filtering (composition, page reset,
+reload, shareability), pagination clamping and boundaries, and the
+accessibility contract (labelled controls, scoped headers, captions, skip link,
+landmark naming, heading order).
 
 ## Known limitations
 
-- `scanHandles` and `scanRoles` cap at 12k / 8k rows. Past that, the headline counts
-  freeze rather than growing, and there is no truncation indicator yet.
+- **`loadTvsEvents` is too heavy to run per request.** It scans from each token's
+  deploy block to head over RPC on a cold cache. That is why `/` and `/wraps` stay on
+  ISR while `/events` and `/acl` read filters from `searchParams` — reading
+  searchParams makes a route dynamic, which moves that scan onto every request and
+  takes the server down. The fix is to serve these events from the indexer, which
+  already stores the block numbers and timestamps this scan re-derives over RPC.
+- Because of the above, the TVS tables still filter client-side, so `/` and `/wraps`
+  serialize the full event set (~315KB). `/events` and `/acl` do not.
+- `scanHandles` and `scanRoles` cap at 12k / 8k rows. Truncation is now surfaced in the
+  UI, but the cap itself remains.
 - `lib/tvs.ts` keeps a module-level cache. It is per-process, so on a multi-instance
-  deploy different users can see slightly different `partial` states.
-- The block inspector matches handles by timestamp window rather than block number,
-  which over-collects on fast chains. The indexer stores `blockNumber`; a keyed query
-  is the real fix.
-- Table filter state lives in `useState`, so it is not shareable via URL and the full
-  row set is serialized to the client on every refresh.
+  deploy different users can see slightly different `partial` states, and it is never
+  evicted.
 
 ## Roadmap
 
 - Historical TVL/TVS chart
 - Vault analytics on `ConfidentialERC7540Factory`
 - Per-operator drilldown pages
-- Server-side table filtering via `searchParams`
+- Serve shield/unshield events from the indexer, which would remove the RPC log scan
+  and let `/` and `/wraps` filter server-side like the other tables
