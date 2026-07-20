@@ -12,13 +12,17 @@ const mockURL = `http://127.0.0.1:${MOCK_PORT}`;
  */
 const backendEnv = {
   PONDER_URL: `${mockURL}/graphql`,
-  ARB_SEPOLIA_RPC_URL: `${mockURL}/rpc`,
-  ETH_SEPOLIA_RPC_URL: `${mockURL}/rpc`,
+  ARB_SEPOLIA_RPC_URL: `${mockURL}/rpc/arb`,
+  ETH_SEPOLIA_RPC_URL: `${mockURL}/rpc/eth`,
 };
 
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  // Every worker hits one shared app server, so the default (a worker per
+  // couple of cores) just queues requests behind each other and pushes tests
+  // into their timeouts. Two keeps the suite parallel without swamping it.
+  workers: 2,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : [["list"]],

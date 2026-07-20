@@ -134,6 +134,79 @@ test.describe("table accessibility", () => {
 });
 
 test.describe("TVS table", () => {
+  /** Reads the "filtered / total" counter the toolbar renders. */
+  async function counts(page: import("@playwright/test").Page) {
+    const text = await page
+      .getByRole("status")
+      .filter({ hasText: "/" })
+      .first()
+      .innerText();
+    const [filtered, total] = text
+      .split("/")
+      .map((s) => Number(s.trim().replace(/,/g, "")));
+    return { filtered, total };
+  }
+
+  test("the page renders rows at all", async ({ page }) => {
+    // Guards every other assertion here: without this they would all pass
+    // vacuously against an empty table.
+    await page.goto("/");
+    const { total } = await counts(page);
+    expect(total, "no events — the rest of this suite would be vacuous").toBeGreaterThan(
+      0,
+    );
+    await expect(page.getByText("No events match the current filter.")).toHaveCount(0);
+  });
+
+  test("exactly one page of rows is sent, never the whole set", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/");
+    const { total } = await counts(page);
+    expect(total, "need more events than one page to prove slicing").toBeGreaterThan(20);
+
+    const html = await (await request.get("/")).text();
+    const rows = html.match(/aria-label="View transaction/g)?.length ?? 0;
+    // TVS_PAGE_SIZE is 20. The client version serialised all `total` events.
+    expect(rows).toBeGreaterThan(0);
+    expect(rows).toBeLessThanOrEqual(20);
+    expect(rows).toBeLessThan(total);
+  });
+
+  test("page 2 shows different rows than page 1", async ({ request }) => {
+    const txs = async (url: string) => {
+      const html = await (await request.get(url)).text();
+      return [...html.matchAll(/aria-label="View transaction (0x[a-f0-9]+)/g)].map(
+        (m) => m[1],
+      );
+    };
+    const first = await txs("/");
+    const second = await txs("/?page=2");
+
+    expect(first.length).toBeGreaterThan(0);
+    expect(second.length).toBeGreaterThan(0);
+    expect(second, "page 2 repeats page 1").not.toEqual(first);
+    expect(
+      first.filter((t) => second.includes(t)),
+      "pages overlap",
+    ).toHaveLength(0);
+  });
+
+  test("a direction filter actually narrows the result set", async ({ page }) => {
+    await page.goto("/");
+    const all = await counts(page);
+
+    await page.goto("/?dir=shield");
+    const shield = await counts(page);
+    await page.goto("/?dir=unshield");
+    const unshield = await counts(page);
+
+    expect(shield.total, "total is the unfiltered count").toBe(all.total);
+    expect(shield.filtered + unshield.filtered).toBe(all.filtered);
+    expect(shield.filtered).toBeLessThanOrEqual(all.filtered);
+  });
+
   test("direction filter is URL-driven and shareable", async ({ page }) => {
     await page.goto("/");
     await page
@@ -150,22 +223,14 @@ test.describe("TVS table", () => {
   });
 
   test("/ and /wraps read the same query string identically", async ({ page }) => {
-    const counts: string[] = [];
-    for (const path of ["/", "/wraps"]) {
-      await page.goto(`${path}?dir=unshield`);
-      counts.push(
-        await page.getByRole("status").filter({ hasText: "/" }).first().innerText(),
-      );
-    }
-    // Both pages share filterTvsEvents, so the filtered/total counter must agree.
-    expect(counts[0]).toBe(counts[1]);
-  });
+    await page.goto("/?dir=shield");
+    const root = await counts(page);
+    await page.goto("/wraps?dir=shield");
+    const wraps = await counts(page);
 
-  test("only one page of rows is sent, not the whole history", async ({ request }) => {
-    const res = await request.get("/");
-    const html = await res.text();
-    const rows = html.match(/aria-label="View transaction/g)?.length ?? 0;
-    // TVS_PAGE_SIZE is 20; the client version used to serialise every event.
-    expect(rows).toBeLessThanOrEqual(20);
+    // Both share filterTvsEvents, so the counts must agree — and be non-zero,
+    // or this proves nothing.
+    expect(root.total).toBeGreaterThan(0);
+    expect(wraps).toEqual(root);
   });
 });

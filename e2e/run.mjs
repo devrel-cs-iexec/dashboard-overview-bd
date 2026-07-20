@@ -15,8 +15,8 @@ const mockURL = `http://127.0.0.1:${MOCK_PORT}`;
 const env = {
   ...process.env,
   PONDER_URL: `${mockURL}/graphql`,
-  ARB_SEPOLIA_RPC_URL: `${mockURL}/rpc`,
-  ETH_SEPOLIA_RPC_URL: `${mockURL}/rpc`,
+  ARB_SEPOLIA_RPC_URL: `${mockURL}/rpc/arb`,
+  ETH_SEPOLIA_RPC_URL: `${mockURL}/rpc/eth`,
 };
 
 const run = (cmd, args, opts = {}) =>
@@ -42,6 +42,9 @@ async function waitFor(url, timeoutMs = 20_000) {
   throw new Error(`mock backend did not start at ${url}`);
 }
 
+// The mock is only needed here for the build. Playwright starts its own pair
+// (mock + app) afterwards, so this one is stopped first — leaving both running
+// makes them contend for the port and the survivor loses its backend mid-run.
 const mock = spawn("node", ["e2e/mock-backend.mjs", String(MOCK_PORT)], {
   stdio: "inherit",
   env,
@@ -51,12 +54,37 @@ let exitCode = 0;
 try {
   await waitFor(`${mockURL}/graphql`);
   await run("npx", ["next", "build"]);
-  await run("npx", ["playwright", "test", ...process.argv.slice(2)]);
 } catch (err) {
   console.error(String(err.message ?? err));
   exitCode = 1;
 } finally {
   mock.kill();
+  // Give the port time to be released before Playwright rebinds it.
+  await sleep(300);
+}
+
+const args = process.argv.slice(2);
+const PROJECTS = ["desktop", "mobile"];
+
+if (exitCode === 0) {
+  // One Playwright invocation per project, each with its own fresh app server.
+  // A single run shares one server across both projects, and the second
+  // project's load on an already-warm server was enough to push tests into
+  // their timeouts here. Sequential runs also make a failure attributable to
+  // one device profile.
+  const projects = args.some((a) => a.startsWith("--project"))
+    ? [null]
+    : PROJECTS;
+
+  for (const project of projects) {
+    const projectArgs = project ? [`--project=${project}`, ...args] : args;
+    try {
+      await run("npx", ["playwright", "test", ...projectArgs]);
+    } catch (err) {
+      console.error(String(err.message ?? err));
+      exitCode = 1;
+    }
+  }
 }
 
 process.exit(exitCode);

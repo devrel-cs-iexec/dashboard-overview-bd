@@ -11,7 +11,8 @@
  *
  * Routes:
  *   POST /graphql  → Ponder queries (fheHandles, aclGrants, confidentialTransfers)
- *   POST /rpc      → JSON-RPC (eth_blockNumber, eth_getBlockByNumber, eth_call, eth_getLogs)
+ *   POST /rpc/arb   → Arbitrum Sepolia JSON-RPC
+ *   POST /rpc/eth   → Ethereum Sepolia JSON-RPC
  */
 import { createServer } from "node:http";
 
@@ -146,24 +147,36 @@ function handleGraphql(body) {
 const TRANSFER_TOPIC =
   "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
+/** Chain heads. ETH Sepolia is far shorter than Arbitrum, which changes how
+ * many chunks the scan walks — worth reproducing rather than flattening. */
+const HEADS = { arb: 289_397_226n, eth: 11_309_358n };
+
+/** Deploy-ish block each chain's seeded events sit just above. */
+const SEED_FROM = { arb: 251_000_000n, eth: 8_100_000n };
+
 /**
- * Synthesises shield events (ERC-20 Transfer into a wrapper) that actually
- * match the query.
+ * Synthesises shield events (ERC-20 Transfer into a wrapper) that match the
+ * query.
  *
  * A real node only returns logs matching the requested address and topics, and
- * viem discards any that do not — so echoing the caller's own filter back is
- * both more faithful and the only way the decoded logs survive.
+ * viem discards any that do not — so the caller's own filter is echoed back.
+ * Each log is keyed by chain, wrapper and index so that ids stay unique:
+ * returning one fixed set for every token and chunk produced thousands of
+ * events sharing a txHash+logIndex, which made pagination look broken.
  */
-function logsFor(params) {
+function logsFor(params, chain) {
   const topics = params.topics ?? [];
   if (topics[0] !== TRANSFER_TOPIC) return [];
 
-  // Only the chunk covering the seeded range carries events, so the range
-  // arithmetic is still exercised by the empty chunks either side.
+  const seed = SEED_FROM[chain];
   const from = BigInt(params.fromBlock ?? "0x0");
-  if (from > 251_000_000n) return [];
+  const to = BigInt(params.toBlock ?? HEADS[chain]);
+  // Events live in exactly one chunk, so the other chunks exercise the empty path.
+  if (seed < from || seed > to) return [];
 
   const toTopic = topics[2] ?? `0x${"0".repeat(24)}${addr(0x1ccec).slice(2)}`;
+  // Distinct per wrapper, so two tokens never emit the same event id.
+  const wrapperSeed = BigInt(`0x${toTopic.slice(-8)}`);
 
   return Array.from({ length: 30 }, (_, i) => ({
     address: params.address ?? addr(0x9923),
@@ -173,23 +186,23 @@ function logsFor(params) {
       toTopic,
     ],
     data: hex(BigInt(1000 + i) * 10n ** 6n),
-    blockNumber: hex(251_000_000 + i, 8),
-    blockHash: hex(0x9000 + i),
-    transactionHash: hex(0x7000 + i),
+    blockNumber: hex(seed + BigInt(i), 8),
+    blockHash: hex(wrapperSeed + BigInt(i)),
+    transactionHash: hex(wrapperSeed * 1000n + BigInt(i)),
     transactionIndex: "0x0",
     logIndex: hex(i, 2),
     removed: false,
   }));
 }
 
-function handleRpc(body) {
+function handleRpc(body, chain) {
   const reply = (result) => ({ jsonrpc: "2.0", id: body.id, result });
 
   switch (body.method) {
     case "eth_chainId":
-      return reply("0x66eee");
+      return reply(chain === "eth" ? "0xaa36a7" : "0x66eee");
     case "eth_blockNumber":
-      return reply("0x113dcd7f");
+      return reply(hex(HEADS[chain], 8));
     case "eth_getBlockByNumber":
       return reply({
         number: body.params?.[0] ?? "0x1",
@@ -202,7 +215,7 @@ function handleRpc(body) {
       // covers inferredTotalSupply() and underlying().
       return reply(hex(1_000_000n * 10n ** 6n));
     case "eth_getLogs":
-      return reply(logsFor(body.params?.[0] ?? {}));
+      return reply(logsFor(body.params?.[0] ?? {}, chain));
     default:
       return reply(null);
   }
@@ -231,9 +244,12 @@ createServer((req, res) => {
 
     if (url.startsWith("/graphql")) return respond(handleGraphql(body));
     if (url.startsWith("/rpc")) {
+      // /rpc/eth vs /rpc/arb, so the two chains can differ in head height and
+      // therefore in how many chunks the scan walks.
+      const chain = url.includes("/eth") ? "eth" : "arb";
       // viem batches JSON-RPC calls into an array.
-      if (Array.isArray(body)) return respond(body.map(handleRpc));
-      return respond(handleRpc(body));
+      if (Array.isArray(body)) return respond(body.map((b) => handleRpc(b, chain)));
+      return respond(handleRpc(body, chain));
     }
     res.writeHead(404).end();
   });
