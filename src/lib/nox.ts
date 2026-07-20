@@ -1,7 +1,10 @@
 import { defineChain, type Address } from "viem";
 
+export const ARB_SEPOLIA_ID = 421614;
+export const ETH_SEPOLIA_ID = 11155111;
+
 export const arbitrumSepolia = defineChain({
-  id: 421614,
+  id: ARB_SEPOLIA_ID,
   name: "Arbitrum Sepolia",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: {
@@ -14,7 +17,7 @@ export const arbitrumSepolia = defineChain({
 });
 
 export const ethereumSepolia = defineChain({
-  id: 11155111,
+  id: ETH_SEPOLIA_ID,
   name: "Ethereum Sepolia",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: {

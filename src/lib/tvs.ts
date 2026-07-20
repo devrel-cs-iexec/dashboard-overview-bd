@@ -2,7 +2,9 @@ import { wrapperAbi, erc20TransferEvent, unwrapFinalizedEvent } from "./abi";
 import { TOKENS, type ConfidentialToken } from "./nox";
 import { publicClient, ethSepoliaClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
-import type { PublicClient, Log } from "viem";
+import { chunkedGetLogs, clientForChain, bigintToNumber } from "./rpc";
+import { ETH_SEPOLIA_ID } from "./nox";
+import type { PublicClient } from "viem";
 
 export type TvsEventDirection = "shield" | "unshield";
 
@@ -38,12 +40,6 @@ export type TvsPayload = {
   unshieldedUsd: number;
   prices: Prices;
 };
-
-function clientForChain(chainId: number): PublicClient {
-  return chainId === 11155111
-    ? (ethSepoliaClient as unknown as PublicClient)
-    : (publicClient as unknown as PublicClient);
-}
 
 // Module-level stale-while-revalidate cache — survives concurrent requests,
 // prevents RPC hammering, and serves last-known-good data on transient failures.
@@ -99,8 +95,8 @@ async function loadTvsEventsRaw(): Promise<TvsPayload> {
   const partial = perToken.some((p) => p.partial);
 
   // Fill timestamps per chain — block numbers are chain-specific
-  const arbEvents = events.filter((e) => e.chainId !== 11155111 && e.timestamp === 0);
-  const ethEvents = events.filter((e) => e.chainId === 11155111 && e.timestamp === 0);
+  const arbEvents = events.filter((e) => e.chainId !== ETH_SEPOLIA_ID);
+  const ethEvents = events.filter((e) => e.chainId === ETH_SEPOLIA_ID);
 
   const [arbTs, ethTs] = await Promise.all([
     fetchBlockTimestamps(
@@ -173,12 +169,7 @@ async function loadOneTokenEvents(
   const events: TvsEvent[] = [];
 
   const price = priceFor(token.underlyingSymbol, prices);
-  const toUsd = (raw: bigint): number => {
-    const divisor = 10n ** BigInt(token.decimals);
-    const whole = Number(raw / divisor);
-    const frac = Number(raw % divisor) / Number(divisor);
-    return (whole + frac) * price;
-  };
+  const toUsd = (raw: bigint): number => bigintToNumber(raw, token.decimals) * price;
 
   if (shieldLogs.status === "fulfilled") {
     for (const log of shieldLogs.value) {
@@ -235,32 +226,6 @@ async function loadOneTokenEvents(
   }
 
   return { events, partial };
-}
-
-const CHUNK_SIZE = 10_000_000n;
-
-async function chunkedGetLogs(
-  client: PublicClient,
-  params: {
-    address: `0x${string}`;
-    event: unknown;
-    args?: unknown;
-    fromBlock: bigint;
-    toBlock: bigint;
-  },
-): Promise<Log[]> {
-  const results: Log[] = [];
-  for (let from = params.fromBlock; from <= params.toBlock; from += CHUNK_SIZE) {
-    const to =
-      from + CHUNK_SIZE - 1n < params.toBlock ? from + CHUNK_SIZE - 1n : params.toBlock;
-    const chunk = await (client.getLogs as (p: unknown) => Promise<Log[]>)({
-      ...params,
-      fromBlock: from,
-      toBlock: to,
-    });
-    results.push(...chunk);
-  }
-  return results;
 }
 
 /**

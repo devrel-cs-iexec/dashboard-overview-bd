@@ -1,6 +1,6 @@
 import { wrapperAbi, erc20Abi, unwrapFinalizedEvent } from "./abi";
 import { TOKENS, opCategory, type OpCategory, type ConfidentialToken } from "./nox";
-import { publicClient, ethSepoliaClient } from "./viem";
+import { chunkedGetLogs, clientForChain, bigintToNumber } from "./rpc";
 import { getPrices, priceFor, type Prices } from "./price";
 import { getMeta, scanHandles, scanRoles, type HandleRow } from "./subgraph";
 import { getPonderTokenStats } from "./ponder";
@@ -57,15 +57,19 @@ export type DashboardData = {
 };
 
 export async function loadDashboard(): Promise<DashboardData> {
-  const [meta, prices, allHandlesRaw, roles] = await Promise.all([
+  // loadTokenStats depends only on prices, so it joins the same fan-out rather
+  // than waiting on the twenty paginated indexer round-trips beside it.
+  const pricesPromise = getPrices();
+
+  const [meta, prices, allHandlesRaw, roles, tokenResult] = await Promise.all([
     getMeta(),
-    getPrices(),
+    pricesPromise,
     scanHandles({ pageSize: 1000, maxPages: 12 }),
     scanRoles({ pageSize: 1000, maxPages: 8 }),
+    pricesPromise.then(loadTokenStats),
   ]);
 
-  // Token stats need the prices, so resolve them after prices arrive
-  const { tokens: tokenStats, partial: tokensPartial } = await loadTokenStats(prices);
+  const { tokens: tokenStats, partial: tokensPartial } = tokenResult;
 
   const normalizeOp = (h: HandleRow): HandleRow => ({
     ...h,
@@ -169,7 +173,7 @@ async function loadOneTokenStats(
   token: ConfidentialToken,
   prices: Prices,
 ): Promise<TokenStats> {
-  const client = token.chainId === 11155111 ? ethSepoliaClient : publicClient;
+  const client = clientForChain(token.chainId);
 
   // Tracks whether the unwrap scan actually completed. If it did not, tvs is
   // only a lower bound and must not be presented as authoritative.
@@ -190,15 +194,18 @@ async function loadOneTokenStats(
         }) as Promise<`0x${string}`>),
     getPonderTokenStats(token.wrapper, token.chainId),
     client
-      .getLogs({
-        address: token.wrapper,
-        event: unwrapFinalizedEvent,
-        fromBlock: token.fromBlock,
-        toBlock: "latest",
-      })
+      .getBlockNumber()
+      .then((toBlock) =>
+        chunkedGetLogs(client, {
+          address: token.wrapper,
+          event: unwrapFinalizedEvent,
+          fromBlock: token.fromBlock,
+          toBlock,
+        }),
+      )
       .catch(() => {
         unwrapsScanned = false;
-        return [] as never[];
+        return [];
       }),
   ]);
 
@@ -211,12 +218,7 @@ async function loadOneTokenStats(
 
   const tvs = tvl + cumulativeUnwraps;
   const price = priceFor(token.underlyingSymbol, prices);
-  const divisor = 10n ** BigInt(token.decimals);
-  const toUsd = (raw: bigint): number => {
-    const whole = Number(raw / divisor);
-    const frac = Number(raw % divisor) / Number(divisor);
-    return (whole + frac) * price;
-  };
+  const toUsd = (raw: bigint): number => bigintToNumber(raw, token.decimals) * price;
 
   return {
     ...token,
