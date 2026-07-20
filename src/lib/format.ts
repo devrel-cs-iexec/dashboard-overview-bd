@@ -1,3 +1,5 @@
+import { ARB_SEPOLIA_ID, arbitrumSepolia, ethereumSepolia } from "./nox";
+
 export function formatCompactNumber(value: number | bigint, decimals = 1): string {
   const n = typeof value === "bigint" ? Number(value) : value;
   if (!isFinite(n)) return "—";
@@ -5,8 +7,16 @@ export function formatCompactNumber(value: number | bigint, decimals = 1): strin
   if (abs >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(decimals)}B`;
   if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(decimals)}M`;
   if (abs >= 1_000) return `${(n / 1_000).toFixed(decimals)}K`;
-  if (abs >= 1) return n.toFixed(decimals === 0 ? 0 : Math.min(decimals, 2));
-  return n.toPrecision(2);
+  if (abs >= 1) return n.toFixed(decimals);
+  if (n === 0) return "0";
+  // Below 1, show enough decimals to carry two significant digits, then trim.
+  // toPrecision was used here, but it emits exponent notation under ~1e-6
+  // ("1.0e-7"), which is not something to render in a table cell.
+  const places = Math.min(20, Math.max(2, Math.ceil(-Math.log10(abs)) + 1));
+  return n
+    .toFixed(places)
+    .replace(/(\.\d*?)0+$/, "$1")
+    .replace(/\.$/, "");
 }
 
 export function formatTokenAmount(
@@ -37,23 +47,22 @@ export function formatTokenCompact(raw: bigint, decimals: number): string {
   return formatCompactNumber(whole + frac, 2);
 }
 
+/** Explorer base URL, taken from the chain definitions rather than restated. */
+function explorerBase(chainId: number): string {
+  const chain = chainId === ARB_SEPOLIA_ID ? arbitrumSepolia : ethereumSepolia;
+  return chain.blockExplorers.default.url;
+}
+
 export function explorerTx(chainId: number, txHash: string): string {
-  return chainId === 421614
-    ? `https://sepolia.arbiscan.io/tx/${txHash}`
-    : `https://sepolia.etherscan.io/tx/${txHash}`;
+  return `${explorerBase(chainId)}/tx/${txHash}`;
 }
 
 export function explorerAddress(chainId: number, address: string): string {
-  return chainId === 421614
-    ? `https://sepolia.arbiscan.io/address/${address}`
-    : `https://sepolia.etherscan.io/address/${address}`;
+  return `${explorerBase(chainId)}/address/${address}`;
 }
 
 export function explorerBlock(chainId: number, blockNumber: number | bigint): string {
-  const n = typeof blockNumber === "bigint" ? blockNumber.toString() : blockNumber;
-  return chainId === 421614
-    ? `https://sepolia.arbiscan.io/block/${n}`
-    : `https://sepolia.etherscan.io/block/${n}`;
+  return `${explorerBase(chainId)}/block/${blockNumber.toString()}`;
 }
 
 export function shortAddress(address: string): string {
@@ -89,5 +98,7 @@ export function relativeTime(timestamp: number | bigint): string {
   if (abs < 3600) return RTF.format(Math.round(seconds / 60), "minute");
   if (abs < 86400) return RTF.format(Math.round(seconds / 3600), "hour");
   if (abs < 2_592_000) return RTF.format(Math.round(seconds / 86400), "day");
-  return RTF.format(Math.round(seconds / 2_592_000), "month");
+  // Without a year bucket a three-year-old event reads "36 months ago".
+  if (abs < 31_536_000) return RTF.format(Math.round(seconds / 2_592_000), "month");
+  return RTF.format(Math.round(seconds / 31_536_000), "year");
 }
