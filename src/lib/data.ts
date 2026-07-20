@@ -50,8 +50,9 @@ export type DashboardData = {
   ops: OpsBreakdown;
   topOperators: { operator: string; count: number }[];
   /**
-   * True when at least one token failed to load, or an unwrap scan did not
-   * complete. Totals are then a lower bound, not an authoritative figure.
+   * True when any input was incomplete: a token failed to load, an unwrap scan
+   * did not finish, or a paginated indexer scan hit its cap. Every count in
+   * `totals` is then a lower bound, not an authoritative figure.
    */
   partial: boolean;
 };
@@ -61,7 +62,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   // than waiting on the twenty paginated indexer round-trips beside it.
   const pricesPromise = getPrices();
 
-  const [meta, prices, allHandlesRaw, roles, tokenResult] = await Promise.all([
+  const [meta, prices, handleScan, roleScan, tokenResult] = await Promise.all([
     getMeta(),
     pricesPromise,
     scanHandles({ pageSize: 1000, maxPages: 12 }),
@@ -70,6 +71,8 @@ export async function loadDashboard(): Promise<DashboardData> {
   ]);
 
   const { tokens: tokenStats, partial: tokensPartial } = tokenResult;
+  const { items: allHandlesRaw, complete: handlesComplete } = handleScan;
+  const { items: roles, complete: rolesComplete } = roleScan;
 
   const normalizeOp = (h: HandleRow): HandleRow => ({
     ...h,
@@ -147,7 +150,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     },
     ops,
     topOperators,
-    partial: tokensPartial,
+    partial: tokensPartial || !handlesComplete || !rolesComplete,
   };
 }
 

@@ -1,5 +1,5 @@
 import { AclTable } from "@/components/AclTable";
-import { PageHeader, LivePill } from "@/components/PageHeader";
+import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { scanRoles } from "@/lib/subgraph";
 
@@ -7,7 +7,7 @@ export const metadata = { title: "ACL Audit" };
 export const revalidate = 60;
 
 export default async function AclPage() {
-  const roles = await scanRoles({ pageSize: 1000, maxPages: 10 });
+  const { items: roles, complete } = await scanRoles({ pageSize: 1000, maxPages: 10 });
 
   const admins = new Set(
     roles.filter((r) => r.role === "ADMIN").map((r) => r.account.toLowerCase()),
@@ -19,7 +19,7 @@ export default async function AclPage() {
   return (
     <>
       <PageHeader kicker="Compute" title="ACL Audit">
-        <LivePill />
+        {complete ? <LivePill /> : <WarnPill label="Truncated · scan cap reached" />}
       </PageHeader>
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
@@ -33,8 +33,8 @@ export default async function AclPage() {
             stats={[
               {
                 label: "Total grants",
-                value: roles.length.toLocaleString(),
-                sub: "all-time",
+                value: `${complete ? "" : "\u2265"}${roles.length.toLocaleString()}`,
+                sub: complete ? "all-time" : "scan cap reached",
               },
               {
                 label: "Distinct admins",

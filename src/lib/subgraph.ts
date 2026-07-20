@@ -172,16 +172,29 @@ const HANDLES_ALL_QUERY = gql`
   }
 `;
 
+/**
+ * Result of a paginated scan.
+ *
+ * `complete` is false when a page request failed or the maxPages cap was hit.
+ * `items` is then a prefix of the real set, so any count derived from it is a
+ * lower bound — previously indistinguishable from an exact total.
+ */
+export type ScanResult<T> = {
+  items: T[];
+  complete: boolean;
+};
+
 export async function scanHandles(opts: {
   pageSize?: number;
   maxPages?: number;
   since?: number;
   publicOnly?: boolean;
-}): Promise<HandleRow[]> {
+}): Promise<ScanResult<HandleRow>> {
   const pageSize = Math.min(opts.pageSize ?? 1000, 1000);
   const maxPages = opts.maxPages ?? 20;
-  const out: HandleRow[] = [];
+  const items: HandleRow[] = [];
   let after: string | null = null;
+  let complete = false;
 
   for (let i = 0; i < maxPages; i++) {
     type R = {
@@ -198,19 +211,35 @@ export async function scanHandles(opts: {
         res = await client.request<R>(HANDLES_ALL_QUERY, { limit: pageSize, after });
       }
     } catch {
+      // A mid-scan failure leaves a partial set; say so rather than returning
+      // it typed identically to a finished scan.
+      return { items, complete: false };
+    }
+
+    const page = res.fheHandles.items;
+    const filtered = opts.since
+      ? page.filter((h) => Number(h.timestamp) >= opts.since!)
+      : page;
+    items.push(...filtered.map(toHandleRow));
+
+    if (!res.fheHandles.pageInfo.hasNextPage) {
+      complete = true;
       break;
     }
 
-    const items = res.fheHandles.items;
-    const filtered = opts.since
-      ? items.filter((h) => Number(h.timestamp) >= opts.since!)
-      : items;
-    out.push(...filtered.map(toHandleRow));
+    // Pages arrive newest-first, so once the oldest row on this page predates
+    // the window there is nothing left to find and every later page is
+    // guaranteed to be discarded.
+    const oldest = page[page.length - 1];
+    if (opts.since && oldest && Number(oldest.timestamp) < opts.since) {
+      complete = true;
+      break;
+    }
 
-    if (!res.fheHandles.pageInfo.hasNextPage) break;
     after = res.fheHandles.pageInfo.endCursor;
   }
-  return out;
+
+  return { items, complete };
 }
 
 // ── scanRoles ─────────────────────────────────────────────────────────────────
@@ -243,11 +272,12 @@ const GRANTS_PAGE_QUERY = gql`
 export async function scanRoles(opts: {
   pageSize?: number;
   maxPages?: number;
-}): Promise<HandleRoleRow[]> {
+}): Promise<ScanResult<HandleRoleRow>> {
   const pageSize = Math.min(opts.pageSize ?? 1000, 1000);
   const maxPages = opts.maxPages ?? 10;
-  const out: HandleRoleRow[] = [];
+  const items: HandleRoleRow[] = [];
   let after: string | null = null;
+  let complete = false;
 
   for (let i = 0; i < maxPages; i++) {
     type R = {
@@ -260,13 +290,17 @@ export async function scanRoles(opts: {
     try {
       res = await client.request<R>(GRANTS_PAGE_QUERY, { limit: pageSize, after });
     } catch {
+      return { items, complete: false };
+    }
+    items.push(...res.aclGrants.items.map(toRoleRow));
+    if (!res.aclGrants.pageInfo.hasNextPage) {
+      complete = true;
       break;
     }
-    out.push(...res.aclGrants.items.map(toRoleRow));
-    if (!res.aclGrants.pageInfo.hasNextPage) break;
     after = res.aclGrants.pageInfo.endCursor;
   }
-  return out;
+
+  return { items, complete };
 }
 
 // ── scanRolesByAddress ────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { EventsTable, type EventRow } from "@/components/EventsTable";
-import { PageHeader, LivePill } from "@/components/PageHeader";
+import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { scanHandles } from "@/lib/subgraph";
 import { opCategory } from "@/lib/nox";
@@ -8,7 +8,10 @@ export const metadata = { title: "Nox Events" };
 export const revalidate = 60;
 
 export default async function EventsPage() {
-  const handles = await scanHandles({ pageSize: 1000, maxPages: 12 });
+  const { items: handles, complete } = await scanHandles({
+    pageSize: 1000,
+    maxPages: 12,
+  });
 
   const rows: EventRow[] = handles.map((h) => ({
     ...h,
@@ -20,7 +23,7 @@ export default async function EventsPage() {
   return (
     <>
       <PageHeader kicker="Dashboards" title="Nox Events">
-        <LivePill />
+        {complete ? <LivePill /> : <WarnPill label="Truncated · scan cap reached" />}
       </PageHeader>
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
@@ -34,8 +37,8 @@ export default async function EventsPage() {
             stats={[
               {
                 label: "Total events",
-                value: rows.length.toLocaleString(),
-                sub: "all-time",
+                value: `${complete ? "" : "\u2265"}${rows.length.toLocaleString()}`,
+                sub: complete ? "all-time" : "scan cap reached",
               },
               {
                 label: "Publicly decryptable",
