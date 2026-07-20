@@ -7,20 +7,27 @@ import { getPonderTokenStats } from "./ponder";
 
 export type TokenStats = ConfidentialToken & {
   underlyingResolved: `0x${string}`;
-  /** ERC-20 currently held by the wrapper (= current locked = TVL) */
+  /**
+   * The wrapper's inferredTotalSupply() — the confidential token's own supply,
+   * not underlying.balanceOf(wrapper). Equal to the ERC-20 reserve only while
+   * the wrapper is exactly collateralized and both sides share `decimals`.
+   */
   tvl: bigint;
   /** TVL + sum of all finalized unwrap plaintextAmounts (= cumulative inflows = TVS) */
   tvs: bigint;
   /** Cumulative ERC-20 outflows: sum of finalized unwrap plaintextAmounts */
   cumulativeUnwraps: bigint;
-  /** Number of finalized unwrap events indexed by Ponder */
+  /** Number of finalized unwrap events found in the on-chain log scan */
   unwrapCount: number;
   /** Unique wallets that ever interacted with this token (from Ponder) */
   holderCount: number;
   /** Same numbers in USD, using the live CoinGecko price */
   tvlUsd: number;
   tvsUsd: number;
-  /** Whether the Ponder scan completed successfully */
+  /**
+   * Whether the UnwrapFinalized log scan completed. When false,
+   * cumulativeUnwraps and therefore tvs are lower bounds.
+   */
   unwrapsScanned: boolean;
 };
 
