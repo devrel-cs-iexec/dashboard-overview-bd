@@ -2,7 +2,7 @@ import { wrapperAbi, erc20TransferEvent, unwrapFinalizedEvent } from "./abi";
 import { TOKENS, type ConfidentialToken } from "./nox";
 import { publicClient, ethSepoliaClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
-import { chunkedGetLogs, clientForChain, bigintToNumber } from "./rpc";
+import { chunkedGetLogs, clientForChain, bigintToNumber, pool } from "./rpc";
 import { ETH_SEPOLIA_ID } from "./nox";
 import type { PublicClient } from "viem";
 
@@ -47,6 +47,14 @@ export type TvsPayload = {
  * Per-process, so on a multi-instance deploy each instance keeps its own copy
  * and users may see slightly different `partial` states.
  */
+/**
+ * Concurrent eth_getBlockByNumber calls while backfilling event timestamps.
+ * Kept at the previous peak: the win here is that the pool sustains this depth
+ * instead of draining between batches, not that the depth went up. Raising it
+ * pushed the build workers into an OOM kill during static generation.
+ */
+const BLOCK_FETCH_CONCURRENCY = 8;
+
 const TVS_TTL_MS = 60_000;
 
 /** How long a stale payload may still be served while a refresh runs behind it. */
@@ -257,25 +265,27 @@ async function loadOneTokenEvents(
 }
 
 /**
- * Batch-fetch block timestamps for a unique set of block numbers. RPCs throttle
- * if we hammer them in parallel — we do small concurrent windows.
+ * Fetch timestamps for a set of unique block numbers.
+ *
+ * One eth_getBlockByNumber per block is the dominant cost of a cold scan, so
+ * calls run through a bounded pool rather than sequential batches, which let
+ * the slowest call in each batch gate the rest. Failures are tolerated: a
+ * missing timestamp renders as "—" rather than failing the whole page.
  */
 async function fetchBlockTimestamps(
   blocks: bigint[],
   client: PublicClient,
 ): Promise<Map<bigint, number>> {
   const out = new Map<bigint, number>();
-  const window = 8;
-  for (let i = 0; i < blocks.length; i += window) {
-    const slice = blocks.slice(i, i + window);
-    const results = await Promise.allSettled(
-      slice.map((b) => client.getBlock({ blockNumber: b, includeTransactions: false })),
-    );
-    results.forEach((r, idx) => {
-      if (r.status === "fulfilled") {
-        out.set(slice[idx], Number(r.value.timestamp));
-      }
-    });
-  }
+  if (blocks.length === 0) return out;
+
+  const settled = await pool(blocks, BLOCK_FETCH_CONCURRENCY, (blockNumber) =>
+    client.getBlock({ blockNumber, includeTransactions: false }),
+  );
+
+  settled.forEach((r, i) => {
+    if (r.status === "fulfilled") out.set(blocks[i], Number(r.value.timestamp));
+  });
+
   return out;
 }

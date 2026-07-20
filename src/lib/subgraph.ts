@@ -469,3 +469,51 @@ export async function getHandlesByTimestampRange(
     return [];
   }
 }
+
+// ── getHandlesByBlock ─────────────────────────────────────────────────────────
+
+const HANDLES_BY_BLOCK_QUERY = gql`
+  query HandlesByBlock($chainId: Int!, $blockNumber: BigInt!, $limit: Int!) {
+    fheHandles(
+      where: { chainId: $chainId, blockNumber: $blockNumber }
+      orderBy: "timestamp"
+      orderDirection: "asc"
+      limit: $limit
+    ) {
+      items {
+        id
+        operator
+        caller
+        timestamp
+        blockNumber
+        transactionHash
+        isPubliclyDecryptable
+        chainId
+      }
+    }
+  }
+`;
+
+/**
+ * Handles produced in exactly one block.
+ *
+ * Supersedes matching on a timestamp window, which was a heuristic standing in
+ * for the block number the indexer already stores: on Arbitrum's sub-second
+ * blocks a window collects handles from many neighbouring blocks, and on ETH
+ * Sepolia's ~12s blocks it can straddle two.
+ */
+export async function getHandlesByBlock(
+  blockNumber: number | bigint,
+  chainId = ARB_SEPOLIA,
+  limit = 500,
+): Promise<HandleRow[]> {
+  try {
+    const res = await client.request<{ fheHandles: { items: PonderHandle[] } }>(
+      HANDLES_BY_BLOCK_QUERY,
+      { chainId, blockNumber: String(blockNumber), limit },
+    );
+    return res.fheHandles.items.map(toHandleRow);
+  } catch {
+    return [];
+  }
+}

@@ -1,8 +1,8 @@
 import { ExplorerLink } from "@/components/ExplorerLink";
 import { PageHeader } from "@/components/PageHeader";
-import { getHandlesByTimestampRange } from "@/lib/subgraph";
+import { getHandlesByBlock } from "@/lib/subgraph";
 import { publicClient, ethSepoliaClient } from "@/lib/viem";
-import { opCategory, CAT_COLOR } from "@/lib/nox";
+import { opCategory, CAT_COLOR, ARB_SEPOLIA_ID, ETH_SEPOLIA_ID } from "@/lib/nox";
 import { explorerBlock, shortAddress } from "@/lib/format";
 
 export const metadata = { title: "Block Inspector" };
@@ -16,10 +16,10 @@ export default async function BlockPage({
   const { n, chain: chainParam } = await searchParams;
   const blockNum = n ? parseInt(n, 10) : null;
   const isEth = chainParam === "eth";
-  const chainId = isEth ? 11155111 : 421614;
+  const chainId = isEth ? ETH_SEPOLIA_ID : ARB_SEPOLIA_ID;
   const rpcClient = isEth ? ethSepoliaClient : publicClient;
 
-  let handles: Awaited<ReturnType<typeof getHandlesByTimestampRange>> = [];
+  let handles: Awaited<ReturnType<typeof getHandlesByBlock>> = [];
   let blockTs: number | null = null;
   let error: string | null = null;
 
@@ -30,7 +30,7 @@ export default async function BlockPage({
         includeTransactions: false,
       });
       blockTs = Number(block.timestamp);
-      handles = await getHandlesByTimestampRange(blockTs - 1, blockTs + 15, 500, chainId);
+      handles = await getHandlesByBlock(blockNum, chainId);
     } catch {
       error = `Block #${blockNum} not found on ${isEth ? "ETH" : "ARB"} Sepolia or RPC error.`;
     }

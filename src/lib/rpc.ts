@@ -52,26 +52,18 @@ export async function chunkedGetLogs(
     ranges.push({ from, to: end < params.toBlock ? end : params.toBlock });
   }
 
-  const pages: Log[][] = new Array(ranges.length);
-  let next = 0;
-
-  const worker = async () => {
-    while (true) {
-      const i = next++;
-      if (i >= ranges.length) return;
-      pages[i] = await (client.getLogs as (p: unknown) => Promise<Log[]>)({
-        ...params,
-        fromBlock: ranges[i].from,
-        toBlock: ranges[i].to,
-      });
-    }
-  };
-
-  await Promise.all(
-    Array.from({ length: Math.min(CHUNK_CONCURRENCY, ranges.length) }, worker),
+  const settled = await pool(ranges, CHUNK_CONCURRENCY, (range) =>
+    (client.getLogs as (p: unknown) => Promise<Log[]>)({
+      ...params,
+      fromBlock: range.from,
+      toBlock: range.to,
+    }),
   );
 
-  return pages.flat();
+  const failure = settled.find((r) => r.status === "rejected");
+  if (failure && failure.status === "rejected") throw failure.reason;
+
+  return settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
 }
 
 /**
@@ -85,4 +77,36 @@ export function bigintToNumber(raw: bigint, decimals: number): number {
   const whole = Number(raw / divisor);
   const frac = Number(raw % divisor) / Number(divisor);
   return whole + frac;
+}
+
+/**
+ * Maps `fn` over `items` keeping at most `limit` calls in flight, preserving
+ * input order in the result.
+ *
+ * A batched loop (await a slice of N, then the next slice) is not equivalent:
+ * there the slowest call in each slice gates the whole slice, so throughput
+ * collapses to the slowest-per-batch. This keeps the pipe full.
+ */
+export async function pool<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const out: PromiseSettledResult<R>[] = new Array(items.length);
+  let next = 0;
+
+  const worker = async () => {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      try {
+        out[i] = { status: "fulfilled", value: await fn(items[i], i) };
+      } catch (reason) {
+        out[i] = { status: "rejected", reason };
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
 }
