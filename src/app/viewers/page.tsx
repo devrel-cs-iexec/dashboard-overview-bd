@@ -1,7 +1,8 @@
+import { ExplorerLink } from "@/components/ExplorerLink";
 import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { scanHandles } from "@/lib/subgraph";
-import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
+import { relativeTime, shortAddress } from "@/lib/format";
 import { ChainBadge } from "@/components/ChainBadge";
 
 export const metadata = { title: "Public Decryption" };
@@ -98,14 +99,12 @@ export default async function ViewersPage() {
                       {relativeTime(Number(h.blockTimestamp))}
                     </td>
                     <td className="px-5 py-3 text-right sm:px-7">
-                      <a
-                        href={explorerTx(h.chainId, h.transactionHash)}
-                        target="_blank"
-                        rel="noreferrer"
+                      <ExplorerLink
+                        chainId={h.chainId}
+                        kind="tx"
+                        value={h.transactionHash}
                         className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]"
-                      >
-                        {shortAddress(h.transactionHash)} ↗
-                      </a>
+                      />
                     </td>
                   </tr>
                 ))}

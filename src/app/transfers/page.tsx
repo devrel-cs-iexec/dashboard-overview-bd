@@ -1,7 +1,8 @@
+import { ExplorerLink } from "@/components/ExplorerLink";
 import { PageHeader } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { scanConfidentialTransfers } from "@/lib/ponder";
-import { relativeTime, shortAddress, explorerTx, explorerAddress } from "@/lib/format";
+import { relativeTime, shortAddress, explorerAddress } from "@/lib/format";
 import { ChainBadge } from "@/components/ChainBadge";
 import { TOKENS } from "@/lib/nox";
 
@@ -193,14 +194,12 @@ export default async function TransfersPage() {
                             {relativeTime(Number(t.timestamp))}
                           </td>
                           <td className="px-5 py-3 text-right sm:px-7">
-                            <a
-                              href={explorerTx(t.chainId, t.transactionHash)}
-                              target="_blank"
-                              rel="noreferrer"
+                            <ExplorerLink
+                              chainId={t.chainId}
+                              kind="tx"
+                              value={t.transactionHash}
                               className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]"
-                            >
-                              {shortAddress(t.transactionHash)} ↗
-                            </a>
+                            />
                           </td>
                         </tr>
                       );

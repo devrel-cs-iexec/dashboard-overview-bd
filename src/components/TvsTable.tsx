@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { explorerAddress, explorerTx } from "@/lib/format";
+import { explorerAddress } from "@/lib/format";
+import { ExplorerLink } from "@/components/ExplorerLink";
 
 export type TvsEventVM = {
   id: string;
@@ -221,14 +222,13 @@ function Row({ e }: { e: TvsEventVM }) {
         </div>
       </td>
       <td className="px-5 py-3 text-right sm:px-7">
-        <a
-          href={explorerTx(e.chainId, e.txHash)}
-          target="_blank"
-          rel="noreferrer"
+        <ExplorerLink
+          chainId={e.chainId}
+          kind="tx"
+          value={e.txHash}
+          label={e.txHashShort}
           className="font-mono text-[12px] text-[var(--color-muted)] transition-colors hover:text-[var(--color-accent)]"
-        >
-          {e.txHashShort} ↗
-        </a>
+        />
       </td>
     </tr>
   );

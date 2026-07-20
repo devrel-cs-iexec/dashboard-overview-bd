@@ -1,3 +1,4 @@
+import { ExplorerLink } from "@/components/ExplorerLink";
 import { PageHeader } from "@/components/PageHeader";
 import { SearchForm } from "@/components/SearchForm";
 import { StatTiles } from "@/components/StatTiles";
@@ -8,7 +9,6 @@ import {
   shortAddress,
   formatTokenAmount,
   formatUsd,
-  explorerTx,
   explorerAddress,
 } from "@/lib/format";
 import { ChainBadge } from "@/components/ChainBadge";
@@ -232,14 +232,12 @@ export default async function AddressPage({
                             {e.timestamp ? relativeTime(e.timestamp) : "—"}
                           </td>
                           <td className="px-5 py-3 text-right sm:px-7">
-                            <a
-                              href={explorerTx(e.chainId, e.transactionHash)}
-                              target="_blank"
-                              rel="noreferrer"
+                            <ExplorerLink
+                              chainId={e.chainId}
+                              kind="tx"
+                              value={e.transactionHash}
                               className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]"
-                            >
-                              {shortAddress(e.transactionHash)} ↗
-                            </a>
+                            />
                           </td>
                         </tr>
                       ))}

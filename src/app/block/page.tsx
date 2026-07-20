@@ -1,8 +1,9 @@
+import { ExplorerLink } from "@/components/ExplorerLink";
 import { PageHeader } from "@/components/PageHeader";
 import { getHandlesByTimestampRange } from "@/lib/subgraph";
 import { publicClient, ethSepoliaClient } from "@/lib/viem";
 import { opCategory, CAT_COLOR } from "@/lib/nox";
-import { explorerBlock, shortAddress, explorerTx } from "@/lib/format";
+import { explorerBlock, shortAddress } from "@/lib/format";
 
 export const metadata = { title: "Block Inspector" };
 export const revalidate = 0;
@@ -183,14 +184,12 @@ export default async function BlockPage({
                           )}
                         </td>
                         <td className="px-5 py-3 text-right sm:px-7">
-                          <a
-                            href={explorerTx(h.chainId, h.transactionHash)}
-                            target="_blank"
-                            rel="noreferrer"
+                          <ExplorerLink
+                            chainId={h.chainId}
+                            kind="tx"
+                            value={h.transactionHash}
                             className="font-mono text-[12px] text-[var(--color-muted)] hover:text-[var(--color-accent)]"
-                          >
-                            {shortAddress(h.transactionHash)} ↗
-                          </a>
+                          />
                         </td>
                       </tr>
                     );

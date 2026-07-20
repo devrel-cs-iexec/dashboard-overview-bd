@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { ExplorerLink } from "@/components/ExplorerLink";
 import type { HandleRow } from "@/lib/subgraph";
 import { CAT_COLOR, type OpCategory } from "@/lib/nox";
-import { relativeTime, shortAddress, explorerTx } from "@/lib/format";
+import { relativeTime } from "@/lib/format";
 import { ChainBadge } from "./ChainBadge";
 
 export type EventRow = HandleRow & { category: OpCategory | "other" };
@@ -187,14 +188,12 @@ export function EventsTable({ rows }: { rows: EventRow[] }) {
                     {relativeTime(Number(r.blockTimestamp))}
                   </td>
                   <td className="px-5 py-3 text-right sm:px-7">
-                    <a
-                      href={explorerTx(r.chainId, r.transactionHash)}
-                      target="_blank"
-                      rel="noreferrer"
+                    <ExplorerLink
+                      chainId={r.chainId}
+                      kind="tx"
+                      value={r.transactionHash}
                       className="font-mono text-[12px] text-[var(--color-muted)] transition-colors hover:text-[var(--color-accent)]"
-                    >
-                      {shortAddress(r.transactionHash)} ↗
-                    </a>
+                    />
                   </td>
                 </tr>
               ))
