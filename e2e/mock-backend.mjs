@@ -162,6 +162,9 @@ function handleGraphql(body) {
           items: [
             {
               address: addr(0xd000),
+              chainId: ARB,
+              name: "Mock cToken",
+              firstSeenBlock: "251000000",
               holderCount: "42",
               transferCount: "128",
               mintCount: "12",
