@@ -1,8 +1,9 @@
-import { wrapperAbi, erc20TransferEvent, unwrapFinalizedEvent } from "./abi";
+import { wrapperAbi, erc20TransferEvent } from "./abi";
 import { TOKENS, type ConfidentialToken } from "./nox";
 import { publicClient, ethSepoliaClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
 import { chunkedGetLogs, clientForChain, bigintToNumber, pool } from "./rpc";
+import { getFinalizedUnwraps } from "./ponder";
 import { ETH_SEPOLIA_ID } from "./nox";
 import type { PublicClient } from "viem";
 
@@ -130,9 +131,11 @@ async function loadTvsEventsRaw(): Promise<TvsPayload> {
   const events = perToken.flatMap((p) => p.events);
   const partial = perToken.some((p) => p.partial);
 
-  // Fill timestamps per chain — block numbers are chain-specific
-  const arbEvents = events.filter((e) => e.chainId !== ETH_SEPOLIA_ID);
-  const ethEvents = events.filter((e) => e.chainId === ETH_SEPOLIA_ID);
+  // Only shield events (RPC logs) still need a block-timestamp lookup; unshield
+  // events carry finalizedTimestamp straight from the indexer.
+  const needTs = events.filter((e) => e.timestamp === 0);
+  const arbEvents = needTs.filter((e) => e.chainId !== ETH_SEPOLIA_ID);
+  const ethEvents = needTs.filter((e) => e.chainId === ETH_SEPOLIA_ID);
 
   const [arbTs, ethTs] = await Promise.all([
     fetchBlockTimestamps(
@@ -179,36 +182,32 @@ async function loadOneTokenEvents(
       functionName: "underlying",
     })) as `0x${string}`);
 
-  // Resolve latest block once, shared by both queries for this token.
+  // Shield events stay on RPC: the plaintext amount lives in the underlying
+  // ERC-20 Transfer log, which the indexer does not track. Unshields come from
+  // Ponder's unwrapRequest table (finalized), which already stores the receiver,
+  // plaintext amount and finalized block/timestamp/tx. Both promises are created
+  // before the await so they run concurrently.
   const toBlock = await client.getBlockNumber();
+  const shieldPromise = chunkedGetLogs(client, {
+    address: underlying,
+    event: erc20TransferEvent,
+    args: { to: token.wrapper },
+    fromBlock: token.fromBlock,
+    toBlock,
+  });
+  const unwrapsPromise = getFinalizedUnwraps(token.wrapper, token.chainId);
 
-  // Shield events: ERC-20 Transfer to wrapper (plaintext amount in log)
-  // Unshield events: UnwrapFinalized on the wrapper (plaintextAmount field in the event)
-  // chunkedGetLogs splits large ranges into 10M-block pages to stay within RPC limits.
-  const [shieldLogs, unshieldLogs] = await Promise.allSettled([
-    chunkedGetLogs(client, {
-      address: underlying,
-      event: erc20TransferEvent,
-      args: { to: token.wrapper },
-      fromBlock: token.fromBlock,
-      toBlock,
-    }),
-    chunkedGetLogs(client, {
-      address: token.wrapper,
-      event: unwrapFinalizedEvent,
-      fromBlock: token.fromBlock,
-      toBlock,
-    }),
-  ]);
+  const [shieldSettled] = await Promise.allSettled([shieldPromise]);
+  const unwraps = await unwrapsPromise;
 
-  const partial = shieldLogs.status === "rejected" || unshieldLogs.status === "rejected";
+  const partial = shieldSettled.status === "rejected" || !unwraps.complete;
   const events: TvsEvent[] = [];
 
   const price = priceFor(token.underlyingSymbol, prices);
   const toUsd = (raw: bigint): number => bigintToNumber(raw, token.decimals) * price;
 
-  if (shieldLogs.status === "fulfilled") {
-    for (const log of shieldLogs.value) {
+  if (shieldSettled.status === "fulfilled") {
+    for (const log of shieldSettled.value) {
       const args = (log as unknown as { args: Record<string, unknown> }).args;
       const amount = args?.value as bigint | undefined;
       const from = args?.from as `0x${string}` | undefined;
@@ -234,31 +233,27 @@ async function loadOneTokenEvents(
     }
   }
 
-  if (unshieldLogs.status === "fulfilled") {
-    for (const log of unshieldLogs.value) {
-      const args = (log as unknown as { args: Record<string, unknown> }).args;
-      const receiver = args?.receiver as `0x${string}` | undefined;
-      const plaintextAmount = args?.plaintextAmount as bigint | undefined;
-      if (typeof plaintextAmount !== "bigint" || !receiver) continue;
-      events.push({
-        id: `${log.transactionHash}-${log.logIndex}`,
-        direction: "unshield",
-        symbol: token.underlyingSymbol,
-        confidentialSymbol: token.symbol,
-        chainId: token.chainId,
-        wrapper: token.wrapper,
-        underlying,
-        decimals: token.decimals,
-        accent: token.accent,
-        account: receiver,
-        amount: plaintextAmount,
-        amountUsd: toUsd(plaintextAmount),
-        blockNumber: log.blockNumber ?? 0n,
-        timestamp: 0, // filled by fetchBlockTimestamps
-        transactionHash: log.transactionHash as `0x${string}`,
-        logIndex: log.logIndex ?? 0,
-      });
-    }
+  for (const u of unwraps.items) {
+    if (u.plaintextAmount == null || !u.finalizedTx) continue;
+    const amount = BigInt(u.plaintextAmount);
+    events.push({
+      id: u.id,
+      direction: "unshield",
+      symbol: token.underlyingSymbol,
+      confidentialSymbol: token.symbol,
+      chainId: token.chainId,
+      wrapper: token.wrapper,
+      underlying,
+      decimals: token.decimals,
+      accent: token.accent,
+      account: u.receiver as `0x${string}`,
+      amount,
+      amountUsd: toUsd(amount),
+      blockNumber: u.finalizedBlock != null ? BigInt(u.finalizedBlock) : 0n,
+      timestamp: u.finalizedTimestamp != null ? Number(u.finalizedTimestamp) : 0,
+      transactionHash: u.finalizedTx as `0x${string}`,
+      logIndex: 0,
+    });
   }
 
   return { events, partial };
