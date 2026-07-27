@@ -1,9 +1,9 @@
-import { wrapperAbi, erc20Abi, unwrapFinalizedEvent } from "./abi";
+import { wrapperAbi, erc20Abi } from "./abi";
 import { TOKENS, opCategory, type OpCategory, type ConfidentialToken } from "./nox";
-import { chunkedGetLogs, clientForChain, bigintToNumber } from "./rpc";
+import { clientForChain, bigintToNumber } from "./rpc";
 import { getPrices, priceFor, type Prices } from "./price";
 import { getMeta, scanHandles, scanRoles, type HandleRow } from "./subgraph";
-import { getPonderTokenStats } from "./ponder";
+import { getPonderTokenStats, getFinalizedUnwraps } from "./ponder";
 
 export type TokenStats = ConfidentialToken & {
   underlyingResolved: `0x${string}`;
@@ -17,7 +17,7 @@ export type TokenStats = ConfidentialToken & {
   tvs: bigint;
   /** Cumulative ERC-20 outflows: sum of finalized unwrap plaintextAmounts */
   cumulativeUnwraps: bigint;
-  /** Number of finalized unwrap events found in the on-chain log scan */
+  /** Number of finalized unwrap events, from the indexer */
   unwrapCount: number;
   /** Unique wallets that ever interacted with this token (from Ponder) */
   holderCount: number;
@@ -25,8 +25,8 @@ export type TokenStats = ConfidentialToken & {
   tvlUsd: number;
   tvsUsd: number;
   /**
-   * Whether the UnwrapFinalized log scan completed. When false,
-   * cumulativeUnwraps and therefore tvs are lower bounds.
+   * Whether the indexer unwrap query completed. When false, cumulativeUnwraps
+   * and therefore tvs are lower bounds.
    */
   unwrapsScanned: boolean;
 };
@@ -185,11 +185,10 @@ async function loadOneTokenStats(
 ): Promise<TokenStats> {
   const client = clientForChain(token.chainId);
 
-  // Tracks whether the unwrap scan actually completed. If it did not, tvs is
-  // only a lower bound and must not be presented as authoritative.
-  let unwrapsScanned = true;
-
-  const [tvl, underlying, ponderStats, unwrapLogs] = await Promise.all([
+  // Only the TVL / reserve read still touches RPC — the confidential supply is
+  // read live. Finalized unwraps come from the indexer, which already stores
+  // their plaintext amounts.
+  const [tvl, underlying, ponderStats, unwraps] = await Promise.all([
     client.readContract({
       address: token.wrapper,
       abi: wrapperAbi,
@@ -203,27 +202,12 @@ async function loadOneTokenStats(
           functionName: "underlying",
         }) as Promise<`0x${string}`>),
     getPonderTokenStats(token.wrapper, token.chainId),
-    client
-      .getBlockNumber()
-      .then((toBlock) =>
-        chunkedGetLogs(client, {
-          address: token.wrapper,
-          event: unwrapFinalizedEvent,
-          fromBlock: token.fromBlock,
-          toBlock,
-        }),
-      )
-      .catch(() => {
-        unwrapsScanned = false;
-        return [];
-      }),
+    getFinalizedUnwraps(token.wrapper, token.chainId),
   ]);
 
   let cumulativeUnwraps = 0n;
-  for (const log of unwrapLogs) {
-    const args = (log as unknown as { args: Record<string, unknown> }).args;
-    const amt = args?.plaintextAmount as bigint | undefined;
-    if (typeof amt === "bigint") cumulativeUnwraps += amt;
+  for (const u of unwraps.items) {
+    if (u.plaintextAmount != null) cumulativeUnwraps += BigInt(u.plaintextAmount);
   }
 
   const tvs = tvl + cumulativeUnwraps;
@@ -236,11 +220,11 @@ async function loadOneTokenStats(
     tvl,
     tvs,
     cumulativeUnwraps,
-    unwrapCount: unwrapLogs.length,
+    unwrapCount: unwraps.items.length,
     holderCount: ponderStats ? Number(ponderStats.holderCount) : 0,
     tvlUsd: toUsd(tvl),
     tvsUsd: toUsd(tvs),
-    unwrapsScanned,
+    unwrapsScanned: unwraps.complete,
   };
 }
 
