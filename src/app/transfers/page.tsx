@@ -27,24 +27,9 @@ export default async function TransfersPage() {
   const burnCount = transfers.filter((t) => t.kind === "BURN").length;
   const xferCount = transfers.filter((t) => t.kind === "TRANSFER").length;
 
-  const ponderState =
-    transfers.length > 0
-      ? { dot: "bg-[var(--color-positive)]", label: "Ponder · ISR 60s" }
-      : ponderOnline
-        ? { dot: "bg-blue-400", label: "Ponder syncing" }
-        : { dot: "bg-amber-400", label: "Ponder offline" };
-
   return (
     <>
-      <PageHeader kicker="Dashboards" title="Confidential Transfers">
-        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
-          <span
-            aria-hidden
-            className={`pulse-dot inline-block size-1.5 rounded-full ${ponderState.dot}`}
-          />
-          {ponderState.label}
-        </span>
-      </PageHeader>
+      <PageHeader kicker="Dashboards" title="Confidential Transfers" />
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
         <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
