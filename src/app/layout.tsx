@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Anybody, Mulish } from "next/font/google";
 import "./globals.css";
-import { TopNav } from "@/components/TopNav";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { LiveRefresh } from "@/components/LiveRefresh";
@@ -60,7 +59,6 @@ export default async function RootLayout({
         <a href="#content" className="skip-link">
           Skip to content
         </a>
-        <TopNav />
         <LiveRefresh />
         <MobileNav />
         <div className="flex">
