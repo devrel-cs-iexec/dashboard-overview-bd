@@ -113,3 +113,86 @@ export async function scanConfidentialTransfers(
     return { items: [], online: false };
   }
 }
+
+export type PonderUnwrap = {
+  id: string;
+  token: string;
+  chainId: number;
+  receiver: string;
+  plaintextAmount: string | null;
+  finalizedBlock: string | null;
+  finalizedTimestamp: string | null;
+  finalizedTx: string | null;
+};
+
+const FINALIZED_UNWRAPS_QUERY = gql`
+  query FinalizedUnwraps($token: String!, $chainId: Int!, $limit: Int!, $after: String) {
+    unwrapRequests(
+      where: { token: $token, chainId: $chainId, status: "FINALIZED" }
+      orderBy: "finalizedTimestamp"
+      orderDirection: "desc"
+      limit: $limit
+      after: $after
+    ) {
+      items {
+        id
+        token
+        chainId
+        receiver
+        plaintextAmount
+        finalizedBlock
+        finalizedTimestamp
+        finalizedTx
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
+
+type FinalizedUnwrapsResponse = {
+  unwrapRequests: {
+    items: PonderUnwrap[];
+    pageInfo: { hasNextPage: boolean; endCursor: string };
+  };
+};
+
+export type FinalizedUnwrapsResult = {
+  items: PonderUnwrap[];
+  /**
+   * false when the indexer errored or a paginated scan hit its cap. The unwrap
+   * sum is then a lower bound, not authoritative.
+   */
+  complete: boolean;
+};
+
+/**
+ * Every finalized unwrap request for a wrapper, straight from the indexer.
+ * Replaces the historical `UnwrapFinalized` RPC log scan: Ponder already stores
+ * the receiver, plaintext amount and finalized block/timestamp/tx these events
+ * carried, so there is nothing left for the RPC to re-derive.
+ */
+export async function getFinalizedUnwraps(
+  token: string,
+  chainId: number,
+  { pageSize = 1000, maxPages = 20 }: { pageSize?: number; maxPages?: number } = {},
+): Promise<FinalizedUnwrapsResult> {
+  const items: PonderUnwrap[] = [];
+  let after: string | null = null;
+  try {
+    for (let p = 0; p < maxPages; p++) {
+      const res: FinalizedUnwrapsResponse = await client.request(
+        FINALIZED_UNWRAPS_QUERY,
+        { token: token.toLowerCase(), chainId, limit: pageSize, after },
+      );
+      items.push(...res.unwrapRequests.items);
+      if (!res.unwrapRequests.pageInfo.hasNextPage) return { items, complete: true };
+      after = res.unwrapRequests.pageInfo.endCursor;
+    }
+    return { items, complete: false };
+  } catch {
+    return { items, complete: false };
+  }
+}
