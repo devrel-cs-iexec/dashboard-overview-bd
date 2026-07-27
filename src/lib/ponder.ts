@@ -196,3 +196,42 @@ export async function getFinalizedUnwraps(
     return { items, complete: false };
   }
 }
+
+export type IndexerToken = {
+  address: string;
+  chainId: number;
+  name: string | null;
+  firstSeenBlock: string;
+  mintCount: string;
+};
+
+const TOKEN_LIST_QUERY = gql`
+  query TokenList($limit: Int!) {
+    tokens(orderBy: "mintCount", orderDirection: "desc", limit: $limit) {
+      items {
+        address
+        chainId
+        name
+        firstSeenBlock
+        mintCount
+      }
+    }
+  }
+`;
+
+/**
+ * The most-active tokens the indexer has discovered, newest-activity first.
+ * The dashboard uses this to widen the hardcoded TVS token list to every wrapper
+ * that is actually in use, rather than only the four it ships with.
+ */
+export async function getIndexerTokens(limit = 100): Promise<IndexerToken[]> {
+  try {
+    const res = await client.request<{ tokens: { items: IndexerToken[] } }>(
+      TOKEN_LIST_QUERY,
+      { limit },
+    );
+    return res.tokens.items;
+  } catch {
+    return [];
+  }
+}
