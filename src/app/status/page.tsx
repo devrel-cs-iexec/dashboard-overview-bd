@@ -1,9 +1,7 @@
 import { PageHeader } from "@/components/PageHeader";
 import { getMeta } from "@/lib/subgraph";
 import { getPrices } from "@/lib/price";
-import { publicClient, ethSepoliaClient } from "@/lib/viem";
-import { NOX_COMPUTE, TOKENS, arbitrumSepolia, ethereumSepolia } from "@/lib/nox";
-import { relativeTime, shortAddress } from "@/lib/format";
+import { relativeTime } from "@/lib/format";
 
 export const metadata = { title: "System Status" };
 
@@ -19,13 +17,9 @@ type Check = {
 };
 
 export default async function StatusPage() {
-  const checks = await Promise.all([
-    checkRpc(),
-    checkEthRpc(),
-    checkSubgraph(),
-    checkPrices(),
-    ...TOKENS.map((t) => checkWrapper(t.wrapper, t.symbol, t.chainId)),
-  ]);
+  // Ponder is the sole on-chain data source and CoinGecko the sole price feed,
+  // so those are the only two dependencies worth probing here.
+  const checks = await Promise.all([checkSubgraph(), checkPrices()]);
 
   const overall: Check["status"] = checks.some((c) => c.status === "down")
     ? "down"
@@ -131,66 +125,6 @@ function StatusBadge({ status }: { status: Check["status"] }) {
 
 // ============ Checks ============
 
-async function checkRpc(): Promise<Check> {
-  const t0 = Date.now();
-  try {
-    const [chainId, blockNumber] = await Promise.all([
-      publicClient.getChainId(),
-      publicClient.getBlockNumber(),
-    ]);
-    const ms = Date.now() - t0;
-    return {
-      name: "Arbitrum Sepolia RPC",
-      detail:
-        "Pure-RPC source of truth for wrappers (inferredTotalSupply, UnwrapFinalized scans, block timestamps).",
-      status: chainId === arbitrumSepolia.id ? (ms < 1500 ? "ok" : "warn") : "down",
-      meta: [
-        { label: "Chain", value: String(chainId) },
-        { label: "Head block", value: blockNumber.toLocaleString() },
-        { label: "Round-trip", value: `${ms} ms` },
-        { label: "Endpoint", value: "sepolia-rollup.arbitrum.io" },
-      ],
-    };
-  } catch (e) {
-    return {
-      name: "Arbitrum Sepolia RPC",
-      detail: "RPC unreachable — wrapper TVL / wrap-event scan would fail.",
-      status: "down",
-      meta: [{ label: "Error", value: errorMessage(e) }],
-    };
-  }
-}
-
-async function checkEthRpc(): Promise<Check> {
-  const t0 = Date.now();
-  try {
-    const [chainId, blockNumber] = await Promise.all([
-      ethSepoliaClient.getChainId(),
-      ethSepoliaClient.getBlockNumber(),
-    ]);
-    const ms = Date.now() - t0;
-    return {
-      name: "Ethereum Sepolia RPC",
-      detail:
-        "Tenderly authenticated endpoint — ETH Sepolia wrapper TVL scans and block timestamps.",
-      status: chainId === ethereumSepolia.id ? (ms < 1500 ? "ok" : "warn") : "down",
-      meta: [
-        { label: "Chain", value: String(chainId) },
-        { label: "Head block", value: blockNumber.toLocaleString() },
-        { label: "Round-trip", value: `${ms} ms` },
-        { label: "Endpoint", value: "sepolia.gateway.tenderly.co" },
-      ],
-    };
-  } catch (e) {
-    return {
-      name: "Ethereum Sepolia RPC",
-      detail: "RPC unreachable — ETH Sepolia wrapper scans would fail.",
-      status: "down",
-      meta: [{ label: "Error", value: errorMessage(e) }],
-    };
-  }
-}
-
 async function checkSubgraph(): Promise<Check> {
   const ponderUrl = process.env.PONDER_URL ?? "http://localhost:42069/graphql";
   const t0 = Date.now();
@@ -264,38 +198,6 @@ async function checkPrices(): Promise<Check> {
       name: "CoinGecko prices",
       detail: "Price feed errored. Dashboard falls back to USDC=$1, RLC=$0.",
       status: "warn",
-      meta: [{ label: "Error", value: errorMessage(e) }],
-    };
-  }
-}
-
-async function checkWrapper(
-  address: `0x${string}`,
-  symbol: string,
-  chainId: number,
-): Promise<Check> {
-  const t0 = Date.now();
-  const chain = chainId === 11155111 ? "ETH" : "ARB";
-  const client = chainId === 11155111 ? ethSepoliaClient : publicClient;
-  try {
-    const code = await client.getBytecode({ address });
-    const ms = Date.now() - t0;
-    const deployed = !!code && code !== "0x";
-    return {
-      name: `${symbol} wrapper (${chain})`,
-      detail: `ERC20→ERC-7984 wrapper at ${shortAddress(address)}. NoxCompute proxy: ${shortAddress(NOX_COMPUTE)}.`,
-      status: deployed ? "ok" : "down",
-      meta: [
-        { label: "Address", value: shortAddress(address) },
-        { label: "Bytecode", value: deployed ? "present" : "missing" },
-        { label: "Round-trip", value: `${ms} ms` },
-      ],
-    };
-  } catch (e) {
-    return {
-      name: `${symbol} wrapper (${chain})`,
-      detail: "RPC failed to confirm wrapper deployment.",
-      status: "down",
       meta: [{ label: "Error", value: errorMessage(e) }],
     };
   }
