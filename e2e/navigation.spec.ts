@@ -14,7 +14,6 @@ const ROUTES = [
   { href: "/viewers", heading: "Public Decryption" },
   { href: "/acl", heading: "ACL Audit" },
   { href: "/search", heading: "Advanced Search" },
-  { href: "/block", heading: "Block Inspector" },
   { href: "/verify", heading: "Input Verification" },
   { href: "/status", heading: "System Status" },
 ];

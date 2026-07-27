@@ -6,7 +6,6 @@ const PAGES = [
   "/acl",
   "/search",
   "/address",
-  "/block",
   "/verify",
   "/status",
 ];
