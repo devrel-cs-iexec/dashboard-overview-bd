@@ -29,22 +29,3 @@ export function PageHeader({
     </div>
   );
 }
-
-/** "Live · ISR 60s"-style pill. Used by every auto-refreshing page. */
-export function LivePill({ label = "Live · ISR 60s" }: { label?: string }) {
-  return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
-      <span className="pulse-dot inline-block size-1.5 rounded-full bg-[var(--color-positive)] text-[var(--color-positive)]" />
-      {label}
-    </span>
-  );
-}
-
-/** Amber warning pill for degraded / partial data. */
-export function WarnPill({ label }: { label: string }) {
-  return (
-    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-300">
-      {label}
-    </span>
-  );
-}
