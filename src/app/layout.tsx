@@ -26,15 +26,13 @@ const anybody = Anybody({
 
 export const metadata: Metadata = {
   title: {
-    default: "Nox·Stats — live protocol activity",
-    template: "%s · Nox·Stats",
+    default: "Nox Dashboard | Live protocol activity",
+    template: "%s · Nox Dashboard",
   },
-  description:
-    "Live on-chain view of the Nox protocol — total value shielded, confidential transfers, compute operations and access control across ARB and ETH Sepolia.",
+  description: "Nox Dashboard | Live protocol activity",
   openGraph: {
-    title: "Nox·Stats — live protocol activity",
-    description:
-      "Real-time view of the Nox protocol — shielding, confidential transfers, decryption and every module in one place.",
+    title: "Nox Dashboard | Live protocol activity",
+    description: "Nox Dashboard | Live protocol activity",
   },
 };
 
@@ -53,9 +51,13 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${mulish.variable} ${geistMono.variable} ${anybody.variable}`}
     >
-      <body className="antialiased min-h-screen">
+      {/* Browser extensions (e.g. Bitdefender) inject attributes on <body>
+          before React hydrates; suppressHydrationWarning silences the resulting
+          mismatch, which is external and cannot be patched anyway. */}
+      <body className="antialiased min-h-screen" suppressHydrationWarning>
         <a href="#content" className="skip-link">
           Skip to content
         </a>

@@ -40,7 +40,7 @@ export function MobileNav() {
         className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-3 backdrop-blur"
       >
         <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
-          {current?.label ?? "Nox·Stats"}
+          {current?.label ?? "Nox·Dashboard"}
         </span>
         <button
           type="button"
@@ -73,7 +73,7 @@ export function MobileNav() {
               <span className="flex items-center gap-2.5">
                 <NoxMark />
                 <span className="font-display text-[14px] font-semibold uppercase tracking-[0.08em]">
-                  Nox<span className="text-[var(--color-accent)]">·</span>Stats
+                  Nox<span className="text-[var(--color-accent)]">·</span>Dashboard
                 </span>
               </span>
               <button

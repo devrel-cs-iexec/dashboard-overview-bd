@@ -40,7 +40,7 @@ export default async function StatusPage() {
               : "Service disruption — at least one dependency is down."}
         </h2>
         <p className="mt-3 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
-          Real-time health probe of every dependency that powers Nox·Stats. Each check
+          Real-time health probe of every dependency that powers Nox Dashboard. Each check
           runs server-side on every request — no cache — so what you see is what answered
           just now.
         </p>

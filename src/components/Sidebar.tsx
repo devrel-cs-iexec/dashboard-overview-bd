@@ -16,7 +16,7 @@ export function Sidebar({ rlcPrice }: { rlcPrice?: number }) {
       >
         <NoxMark />
         <span className="font-display text-[14px] font-semibold uppercase tracking-[0.08em]">
-          Nox<span className="text-[var(--color-accent)]">·</span>Stats
+          Nox<span className="text-[var(--color-accent)]">·</span>Dashboard
         </span>
       </Link>
 
