@@ -92,7 +92,7 @@ test.describe("accessibility basics", () => {
     }
   });
 
-  test("navigation landmarks are distinguishable", async ({ page, isMobile }) => {
+  test("navigation landmarks are distinguishable", async ({ page }) => {
     await page.goto("/");
     const navs = page.getByRole("navigation");
     const count = await navs.count();
@@ -105,7 +105,9 @@ test.describe("accessibility basics", () => {
       expect(names.every((n) => n !== "")).toBe(true);
       expect(new Set(names).size, "nav landmarks share a name").toBe(names.length);
     }
-    expect(count).toBeGreaterThanOrEqual(isMobile ? 1 : 2);
+    // One primary nav per viewport: the Sidebar on desktop, the MobileNav bar on
+    // mobile. (The top "Site" bar was removed; its landmark now lives in MobileNav.)
+    expect(count).toBeGreaterThanOrEqual(1);
   });
 });
 
