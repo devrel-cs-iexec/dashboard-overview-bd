@@ -35,7 +35,10 @@ export function MobileNav() {
 
   return (
     <div className="lg:hidden">
-      <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-3 backdrop-blur">
+      <nav
+        aria-label="Site"
+        className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-3 backdrop-blur"
+      >
         <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
           {current?.label ?? "Nox·Stats"}
         </span>
@@ -49,7 +52,7 @@ export function MobileNav() {
           <BurgerIcon />
           Menu
         </button>
-      </div>
+      </nav>
 
       {open ? (
         <div className="fixed inset-0 z-50 flex">
