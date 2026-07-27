@@ -1,5 +1,5 @@
 import { TvsTable, TVS_PAGE_SIZE, type TvsEventVM } from "@/components/TvsTable";
-import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
+import { PageHeader } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { loadTvsEvents } from "@/lib/tvs";
 import { toTvsEventVM, filterTvsEvents, tvsTokenOptions } from "@/lib/tvs-view";
@@ -31,13 +31,7 @@ export default async function TvsPage({
 
   return (
     <>
-      <PageHeader kicker="Dashboards" title="TVS Dashboard">
-        {payload.partial ? (
-          <WarnPill label="Partial sync · some logs unavailable" />
-        ) : (
-          <LivePill />
-        )}
-      </PageHeader>
+      <PageHeader kicker="Dashboards" title="TVS Dashboard" />
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
         <p className="max-w-3xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
