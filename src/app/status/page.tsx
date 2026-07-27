@@ -27,8 +27,6 @@ export default async function StatusPage() {
     ...TOKENS.map((t) => checkWrapper(t.wrapper, t.symbol, t.chainId)),
   ]);
 
-  const okCount = checks.filter((c) => c.status === "ok").length;
-  const total = checks.length;
   const overall: Check["status"] = checks.some((c) => c.status === "down")
     ? "down"
     : checks.some((c) => c.status === "warn")
@@ -37,9 +35,7 @@ export default async function StatusPage() {
 
   return (
     <>
-      <PageHeader kicker="System" title="System Status">
-        <OverallPill status={overall} ratio={`${okCount}/${total}`} />
-      </PageHeader>
+      <PageHeader kicker="System" title="System Status" />
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
         <h2 className="font-display max-w-3xl text-[26px] font-medium leading-[1.15] tracking-[-0.02em] sm:text-[32px]">
@@ -130,27 +126,6 @@ function StatusBadge({ status }: { status: Check["status"] }) {
       <span className="size-1.5 rounded-full" style={{ background: v.dot }} />
       {v.label}
     </span>
-  );
-}
-
-function OverallPill({ status, ratio }: { status: Check["status"]; ratio: string }) {
-  const tint =
-    status === "ok"
-      ? "var(--color-positive)"
-      : status === "warn"
-        ? "#e1a32a"
-        : "var(--color-negative)";
-  return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-2)]/60 px-3 py-1">
-      <span
-        aria-hidden
-        className="pulse-dot inline-block size-1.5 rounded-full"
-        style={{ background: tint, color: tint }}
-      />
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
-        {ratio} checks ok
-      </span>
-    </div>
   );
 }
 
