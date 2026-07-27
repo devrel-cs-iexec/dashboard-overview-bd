@@ -1,7 +1,7 @@
 import { AclTable, ACL_PAGE_SIZE } from "@/components/AclTable";
 import { param, paginate, matchesQuery, type SearchParams } from "@/lib/table";
 import { ARB_SEPOLIA_ID, ETH_SEPOLIA_ID } from "@/lib/nox";
-import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
+import { PageHeader } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { scanRoles } from "@/lib/subgraph";
 
@@ -38,9 +38,7 @@ export default async function AclPage({
 
   return (
     <>
-      <PageHeader kicker="Compute" title="ACL Audit">
-        {complete ? <LivePill /> : <WarnPill label="Truncated · scan cap reached" />}
-      </PageHeader>
+      <PageHeader kicker="Compute" title="ACL Audit" />
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
         <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
