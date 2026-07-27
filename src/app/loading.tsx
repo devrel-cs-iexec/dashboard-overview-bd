@@ -1,6 +1,6 @@
 /**
  * Streamed while a page's server data resolves. The uncached routes
- * (/address, /block, /search, /verify) and the multi-second indexer scans
+ * (/address, /search, /verify) and the multi-second indexer scans
  * previously rendered nothing at all during that wait.
  */
 export default function Loading() {

@@ -35,7 +35,6 @@ export const NAV_SECTIONS: NavSection[] = [
     kicker: "Search",
     items: [
       { label: "Advanced Search", href: "/search" },
-      { label: "Block Inspector", href: "/block" },
       { label: "Input Verification", href: "/verify" },
     ],
   },

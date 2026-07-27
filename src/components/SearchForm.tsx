@@ -1,5 +1,5 @@
 /**
- * The lookup form used by /search, /address, /block and /verify. Carries a
+ * The lookup form used by /search, /address and /verify. Carries a
  * real <label> (visually hidden) so the input has an accessible name — a
  * placeholder alone is not one, and it disappears once the user types.
  */
