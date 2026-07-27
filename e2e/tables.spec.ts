@@ -122,6 +122,10 @@ test.describe("table accessibility", () => {
     const scroller = page.locator("div.overflow-x-auto").first();
     const table = scroller.locator("table");
 
+    // Wait for the table to actually lay out before measuring — reading the
+    // width while it is still attaching returns 0 and flakes the assertion.
+    await expect(table).toBeVisible();
+
     // The bug was `w-full` with no min-width: the table shrank to its container
     // so the scroll container never engaged and columns compressed instead.
     const tableWidth = await table.evaluate((el) => el.getBoundingClientRect().width);
