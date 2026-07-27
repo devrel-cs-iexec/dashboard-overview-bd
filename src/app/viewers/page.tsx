@@ -1,5 +1,5 @@
 import { ExplorerLink } from "@/components/ExplorerLink";
-import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
+import { PageHeader } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { scanHandles } from "@/lib/subgraph";
 import { relativeTime, shortAddress } from "@/lib/format";
@@ -9,7 +9,7 @@ export const metadata = { title: "Public Decryption" };
 export const revalidate = 60;
 
 export default async function ViewersPage() {
-  const { items: allHandles, complete } = await scanHandles({
+  const { items: allHandles } = await scanHandles({
     pageSize: 1000,
     maxPages: 12,
   });
@@ -18,9 +18,7 @@ export default async function ViewersPage() {
 
   return (
     <>
-      <PageHeader kicker="Compute" title="Public Decryption">
-        {complete ? <LivePill /> : <WarnPill label="Truncated · scan cap reached" />}
-      </PageHeader>
+      <PageHeader kicker="Compute" title="Public Decryption" />
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
         <p className="mb-6 max-w-2xl text-[14px] leading-[1.55] text-[var(--color-muted)]">
