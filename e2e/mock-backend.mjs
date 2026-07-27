@@ -10,7 +10,8 @@
  *   node e2e/mock-backend.mjs [port]
  *
  * Routes:
- *   POST /graphql  → Ponder queries (fheHandles, aclGrants, confidentialTransfers)
+ *   POST /graphql  → Ponder queries (fheHandles, aclGrants, confidentialTransfers,
+ *                    unwrapRequests)
  *   POST /rpc/arb   → Arbitrum Sepolia JSON-RPC
  *   POST /rpc/eth   → Ethereum Sepolia JSON-RPC
  */
@@ -77,6 +78,38 @@ const TRANSFERS = Array.from({ length: 40 }, (_, i) => ({
 }));
 
 /**
+ * Finalized unwrap requests, keyed to the four wrapper addresses the dashboard
+ * queries. These feed the TVS unshield events + cumulative-unwrap totals now
+ * that those come from the indexer rather than an RPC log scan. Token addresses
+ * are lowercased to match the `token.toLowerCase()` the client sends.
+ */
+const UNWRAP_WRAPPERS = [
+  { token: "0x1ccec6bc60db15e4055d43dc2531bb7d4e5b808e", chainId: ARB },
+  { token: "0x92b23f4a59175415ced5cb37e64a1fc6a9d79af4", chainId: ARB },
+  { token: "0xcf220069b8d803047d9fe773e059a1e4981daa68", chainId: ETH },
+  { token: "0x12b7025544088f35101245af046cb92e91d17d2c", chainId: ETH },
+];
+
+const UNWRAPS = UNWRAP_WRAPPERS.flatMap((w, wi) =>
+  Array.from({ length: 6 }, (_, i) => ({
+    id: `${w.token}-unwrap-${i}`,
+    token: w.token,
+    chainId: w.chainId,
+    receiver: addr(0xd100 + i),
+    unwrapRequestId: hex(0x7000 + wi * 16 + i),
+    unwrapAmountHandle: hex(0x8000 + i),
+    status: "FINALIZED",
+    plaintextAmount: String(BigInt(500 + i) * 10n ** 6n),
+    requestedBlock: String(288_000_000 - wi * 1000 - i),
+    requestedTimestamp: String(1_759_000_000 - i * 3600),
+    requestedTx: hex(0x5100 + wi * 16 + i),
+    finalizedBlock: String(288_500_000 - wi * 1000 - i),
+    finalizedTimestamp: String(1_759_500_000 - i * 3600),
+    finalizedTx: hex(0x6100 + wi * 16 + i),
+  })),
+);
+
+/**
  * Ponder paginates with `limit`/`after`, where the cursor is an offset. One
  * page is enough for the suite, so `hasNextPage` reports honestly and the
  * scans terminate with complete: true.
@@ -110,6 +143,17 @@ function handleGraphql(body) {
   }
   if (query.includes("confidentialTransfers")) {
     return { data: { confidentialTransfers: page(TRANSFERS, variables) } };
+  }
+  if (query.includes("unwrapRequests")) {
+    let rows = UNWRAPS;
+    if (variables.token) {
+      const t = String(variables.token).toLowerCase();
+      rows = rows.filter((u) => u.token === t);
+    }
+    if (variables.chainId !== undefined) {
+      rows = rows.filter((u) => u.chainId === Number(variables.chainId));
+    }
+    return { data: { unwrapRequests: page(rows, variables) } };
   }
   if (query.includes("tokens(")) {
     return {
