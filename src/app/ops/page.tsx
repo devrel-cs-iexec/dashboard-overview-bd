@@ -1,4 +1,4 @@
-import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
+import { PageHeader } from "@/components/PageHeader";
 import { StatTiles } from "@/components/StatTiles";
 import { loadDashboard } from "@/lib/data";
 import { formatUsd } from "@/lib/format";
@@ -16,13 +16,7 @@ export default async function OpsPage() {
 
   return (
     <>
-      <PageHeader kicker="Compute" title="Operation Stats">
-        {data.partial ? (
-          <WarnPill label="Partial · some token data unavailable" />
-        ) : (
-          <LivePill />
-        )}
-      </PageHeader>
+      <PageHeader kicker="Compute" title="Operation Stats" />
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
         <StatTiles
