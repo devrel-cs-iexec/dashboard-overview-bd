@@ -1,9 +1,10 @@
 import { wrapperAbi, erc20TransferEvent } from "./abi";
-import { TOKENS, type ConfidentialToken } from "./nox";
+import { type ConfidentialToken } from "./nox";
 import { publicClient, ethSepoliaClient } from "./viem";
 import { getPrices, priceFor, type Prices } from "./price";
 import { chunkedGetLogs, clientForChain, bigintToNumber, pool } from "./rpc";
 import { getFinalizedUnwraps } from "./ponder";
+import { getConfidentialTokens } from "./tokens";
 import { ETH_SEPOLIA_ID } from "./nox";
 import type { PublicClient } from "viem";
 
@@ -119,9 +120,10 @@ export async function loadTvsEvents(): Promise<TvsPayload> {
  */
 async function loadTvsEventsRaw(): Promise<TvsPayload> {
   const prices = await getPrices();
+  const tokens = await getConfidentialTokens();
 
   const perTokenResults = await Promise.allSettled(
-    TOKENS.map((t) => loadOneTokenEvents(t, prices)),
+    tokens.map((t) => loadOneTokenEvents(t, prices)),
   );
 
   const perToken = perTokenResults.map((r) =>

@@ -1,9 +1,10 @@
 import { wrapperAbi, erc20Abi } from "./abi";
-import { TOKENS, opCategory, type OpCategory, type ConfidentialToken } from "./nox";
+import { opCategory, type OpCategory, type ConfidentialToken } from "./nox";
 import { clientForChain, bigintToNumber } from "./rpc";
 import { getPrices, priceFor, type Prices } from "./price";
 import { getMeta, scanHandles, scanRoles, type HandleRow } from "./subgraph";
 import { getPonderTokenStats, getFinalizedUnwraps } from "./ponder";
+import { getConfidentialTokens } from "./tokens";
 
 export type TokenStats = ConfidentialToken & {
   underlyingResolved: `0x${string}`;
@@ -164,8 +165,9 @@ export async function loadDashboard(): Promise<DashboardData> {
 async function loadTokenStats(
   prices: Prices,
 ): Promise<{ tokens: TokenStats[]; partial: boolean }> {
+  const tokenList = await getConfidentialTokens();
   const results = await Promise.allSettled(
-    TOKENS.map((t) => loadOneTokenStats(t, prices)),
+    tokenList.map((t) => loadOneTokenStats(t, prices)),
   );
   const tokens = results
     .filter((r): r is PromiseFulfilledResult<TokenStats> => r.status === "fulfilled")
@@ -174,7 +176,7 @@ async function loadTokenStats(
   // A rejected token silently disappears from tvlUsd/tvsUsd, so the caller
   // needs to know it happened rather than reading an under-count as truth.
   const partial =
-    tokens.length !== TOKENS.length || tokens.some((t) => !t.unwrapsScanned);
+    tokens.length !== tokenList.length || tokens.some((t) => !t.unwrapsScanned);
 
   return { tokens, partial };
 }
