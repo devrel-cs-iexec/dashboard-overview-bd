@@ -1,5 +1,5 @@
 import { TvsTable, TVS_PAGE_SIZE, type TvsEventVM } from "@/components/TvsTable";
-import { PageHeader, LivePill, WarnPill } from "@/components/PageHeader";
+import { PageHeader } from "@/components/PageHeader";
 import { ChainBadge } from "@/components/ChainBadge";
 import { loadTvsEvents } from "@/lib/tvs";
 import { toTvsEventVM, filterTvsEvents, tvsTokenOptions } from "@/lib/tvs-view";
@@ -38,10 +38,7 @@ export default async function WrapsPage({
 
   return (
     <>
-      <PageHeader kicker="Dashboards" title="Shield / Unshield">
-        {payload.partial ? <WarnPill label="Partial sync" /> : null}
-        <LivePill />
-      </PageHeader>
+      <PageHeader kicker="Dashboards" title="Shield / Unshield" />
 
       <main id="content" className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
         {/* Per-token breakdown */}
